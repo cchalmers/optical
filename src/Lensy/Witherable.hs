@@ -53,7 +53,7 @@ module Lensy.Witherable
   , chipped
   , ichipped
   , witherVector
-  , witherMaybe
+  -- , witherMaybe
 
     -- ** Using 'Wither's
   , witherOf
@@ -66,7 +66,6 @@ module Lensy.Witherable
   , hashNubOf
 
     -- ** Using indexed 'Wither's
-  , witherOf
   , iwitherOf
   , imapMaybeOf
   , ifilterAOf

@@ -411,7 +411,7 @@ lookup :: (Eq i, Foldable f, FoldableWithIndex i g) => i -> f (g a) -> Maybe a
 lookup i = preview (folded . ifolded . index i)
 
 -- | Take the first item from a foldable if it exists.
-toMaybe :: Folable f => f a -> Maybe a
+toMaybe :: Foldable f => f a -> Maybe a
 toMaybe = preview folded
 
 elemIndex :: (FoldableWithIndex i f, Eq a) => a -> f a -> Maybe i
@@ -436,12 +436,10 @@ isInfixOf :: (Foldable f, Foldable g, Eq a) => f a -> g a -> Bool
 isInfixOf f g = F.toList f `List.isInfixOf` F.toList g
 
 ijover :: AnIndexedSetter (V2 i) s t a b -> (i -> i -> a -> b) -> s -> t
-ijover l f = iover l g
-  where g (V2 i j) = f i j
+ijover l f = iover l $ \(V2 i j) -> f i j
 
 ijkover :: AnIndexedSetter (V3 i) s t a b -> (i -> i -> i -> a -> b) -> s -> t
-ijkover l f = iover l g
-  where g (V3 i j k) = f i j k
+ijkover l f = iover l $ \(V3 i j k) -> f i j k
 
 -- module Data.List
 --    (
