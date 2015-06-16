@@ -1,19 +1,19 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Lensy.Text where
 
-import Lensy.Containers
+import           Lensy.Containers
 
-import Control.Lens
+import           Control.Lens
 
+import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString as BS
-import qualified Data.Text.Lazy as LT
-import qualified Data.Text as T
-import qualified Data.List as List
+import qualified Data.List            as List
+import qualified Data.Text            as T
+import qualified Data.Text.Lazy       as LT
 
 -- Chunked -------------------------------------------------------------
 

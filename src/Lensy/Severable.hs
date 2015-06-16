@@ -6,7 +6,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, StandaloneDeriving, UndecidableInstances, FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Lensy.Witherable
+-- Module      :  Lensy.Severable
 -- Copyright   :  (c) Christopher Chalmers
 -- License     :  BSD3
 --
@@ -106,24 +106,10 @@ type Through p f s t a b = p a (f (Maybe b)) -> s -> f (t, s)
 -- | A simple 'Across'.
 type Through' p f s a = Through p f s s a a
 
-
--- | 'Traversable' with the ability to remove elements.
+-- | 'Traversable' with the ability to break into two at some point. The follow
 --
--- @'traverse' f ≡ 'wither' ('fmap' 'Just' . f)@
---
--- A definition of 'wither' must satisfy the following laws:
---
--- [/identity/]
---   @'wither' ('pure' . Just) ≡ 'pure'@
---
--- [/composition/]
---   @Compose . fmap ('wither' f) . 'wither' g ≡ 'wither' (Compose . fmap ('wither' f) . g)@
---
--- Parametricity implies the naturality law:
---
---   @t . 'wither' f = 'wither' (t . f)@
---
-class Witherable t => Severable t where
+-- @'traverse' f = fmap fst . 'sever' (fmap 'Just' . f)@
+class Traversable t => Severable t where
 
   -- | Divide a structure in two by collecting all 'Just' values in the
   --   'fst' tuple. Anything left behind is in the 'snd' tuple.
@@ -187,7 +173,6 @@ class Witherable t => Severable t where
   break :: (a -> Bool) -> t a -> (t a, t a)
   break p = span (not . p)
 
-  mapEither :: (a -> Either b c) -> t a -> (t b, t c)
 
 --   -- | Drops the given prefix if it exists. Returns 'Nothing' if the
 --   --   prefix is not present.
@@ -324,13 +309,13 @@ instance Ord k => Severable (M.Map k) where
   drop n = M.fromAscList . P.drop n . M.toAscList
   {-# INLINE drop #-}
 
-instance (Eq k, Hashable k) => Severable (HM.HashMap k) where
-  sever f = fmap (bimap HM.fromList HM.fromList) . sever (\(i, a) -> fmap ((,) i) <$> f a) . HM.toList
-  {-# INLINE sever #-}
-  take n = HM.fromList . P.take n . HM.toList
-  {-# INLINE take #-}
-  drop n = HM.fromList . P.drop n . HM.toList
-  {-# INLINE drop #-}
+-- instance (Eq k, Hashable k) => Severable (HM.HashMap k) where
+--   sever f = fmap (bimap HM.fromList HM.fromList) . sever (\(i, a) -> fmap ((,) i) <$> f a) . HM.toList
+--   {-# INLINE sever #-}
+--   take n = HM.fromList . P.take n . HM.toList
+--   {-# INLINE take #-}
+--   drop n = HM.fromList . P.drop n . HM.toList
+--   {-# INLINE drop #-}
 
 -- #if (MIN_VERSION_base(4,7,0))
 -- instance Witherable Proxy where

@@ -38,11 +38,11 @@ module Lensy
   , (!!)
   , (!?)
   , (!)
-  , P.break
+  -- , P.break
   , P.cycle
-  , P.drop
-  , P.dropWhile
-  , P.filter
+  -- , P.drop
+  -- , P.dropWhile
+  -- , P.filter
   , head
   , init
   , P.iterate
@@ -53,11 +53,11 @@ module Lensy
   , P.scanl1
   , P.scanr
   , P.scanr1
-  , P.span
-  , P.splitAt
+  -- , P.span
+  -- , P.splitAt
   , tail
-  , P.take
-  , P.takeWhile
+  -- , P.take
+  -- , P.takeWhile
   , P.unzip
   , P.unzip3
   , P.zip
@@ -106,6 +106,7 @@ module Lensy
   , P.elem
   , P.foldMap
   , P.foldl
+  , F.foldl'
   , P.foldl1
   , P.foldr
   , P.foldr1
@@ -121,7 +122,7 @@ module Lensy
   , P.mapM
   , P.sequence
   , P.sequenceA
-  , P.traverse
+  -- , P.traverse
   , (P.*>)
   , (P.<*)
   , (P.<*>)
@@ -225,6 +226,7 @@ module Lensy
   , lookup
   , elemIndex
   , elemIndices
+  , toMaybe
 
   -- classes
   , P.Applicative
@@ -245,7 +247,7 @@ module Lensy
   , P.RealFloat
   , P.RealFrac
   , P.Show
-  , P.Traversable
+  -- , P.Traversable
 
   -- data types
   , P.IO
@@ -268,41 +270,48 @@ module Lensy
   , P.ReadS
   , P.ShowS
   , P.String
+  , Storable (..)
 
+  , V0 (..)
+  , V1 (..)
+  , V2 (..)
+  , V3 (..)
+  , V4 (..)
+
+  -- * lensy
+
+  , ijover
+  , ijkover
 
   -- | Isos and contructors for common containers.
   , module Lensy.Containers
+  , module Lensy.Text
+  , module Lensy.Witherable
+  , module Lensy.Severable
   , module Control.Monad.Primitive
+  , module Control.Lens
+  , Semigroup (..)
 
   ) where
 
-import Prelude.Compat hiding ((++), (!!), (^), head, tail, last, init, map, reverse, lookup)
+import Prelude.Compat hiding ((++), (!!), (^), head, tail, last, init, map, reverse, lookup, filter)
 import qualified Prelude.Compat as P
-import Control.Lens hiding (mapOf)
+import Control.Lens hiding (mapOf, lined, worded)
+import Linear (V0 (..), V1 (..), V2 (..), V3 (..), V4 (..))
 
 import Data.Semigroup
+import Control.Monad.ST
+import Foreign.Storable (Storable (..))
 import Control.Monad.Primitive
-import GHC.Generics
-import Control.Monad.State
 import Data.Distributive
 import Data.Foldable as F
 
-import Data.Text.Lens (IsText (text))
-import Data.ByteString.Lens (packedBytes)
-import Data.Vector.Generic.Lens
-import Data.Vector.Generic.Lens
-import Numeric.Lens
-import System.Exit.Lens
-import System.FilePath.Lens
-import System.IO.Error.Lens
-import Data.Tree.Lens
-import Data.Set.Lens (setOf, setmapped)
-import qualified Data.HashSet.Lens as HashSet
-import Data.Word
-import Data.Hashable
 import qualified Data.List as List
 
 import Lensy.Containers
+import Lensy.Text
+import Lensy.Witherable
+import Lensy.Severable
 
 (^) :: Num a => a -> Int -> a
 -- should really be word or natural
@@ -401,6 +410,10 @@ transpose = distribute
 lookup :: (Eq i, Foldable f, FoldableWithIndex i g) => i -> f (g a) -> Maybe a
 lookup i = preview (folded . ifolded . index i)
 
+-- | Take the first item from a foldable if it exists.
+toMaybe :: Folable f => f a -> Maybe a
+toMaybe = preview folded
+
 elemIndex :: (FoldableWithIndex i f, Eq a) => a -> f a -> Maybe i
 elemIndex = elemIndexOf ifolded
 
@@ -421,6 +434,14 @@ isSuffixOf f g = F.toList f `List.isSuffixOf` F.toList g
 
 isInfixOf :: (Foldable f, Foldable g, Eq a) => f a -> g a -> Bool
 isInfixOf f g = F.toList f `List.isInfixOf` F.toList g
+
+ijover :: AnIndexedSetter (V2 i) s t a b -> (i -> i -> a -> b) -> s -> t
+ijover l f = iover l g
+  where g (V2 i j) = f i j
+
+ijkover :: AnIndexedSetter (V3 i) s t a b -> (i -> i -> i -> a -> b) -> s -> t
+ijkover l f = iover l g
+  where g (V3 i j k) = f i j k
 
 -- module Data.List
 --    (

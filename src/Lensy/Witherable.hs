@@ -554,11 +554,6 @@ witherVector f = fmap GV.fromList . withered f . GV.toList
     :: (GV.Vector v a, GV.Vector w b) => AWither (v a) (w b) a b
   #-}
 
--- | A wither over a traversable structure of 'Maybe's.
-witherMaybe :: Traversable t => Wither (t (Maybe a)) (t (Maybe b)) a b
-witherMaybe f = fmap getChipped . wither f .# Chipped
-{-# INLINE witherMaybe #-}
-
 -- | 'wither' with an index according to its ordinal position.
 withered :: Witherable t => IndexedWither Int (t a) (t b) a b
 withered = conjoined wither (indexing wither)

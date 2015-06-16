@@ -62,9 +62,13 @@ module Lensy.Containers
 
   , BS.ByteString
   , _ByteString
+  , toByteString
+  , toByteStringOf
 
   , LByteString
   , _LByteString
+  , toLByteString
+  , toLByteStringOf
   ) where
 
 import Control.Lens
@@ -182,14 +186,27 @@ _LText = iso LText.unpack LText.pack
 toLText :: Foldable f => f Char -> LText
 toLText = toLTextOf folded
 
+-- Is this better then @pack . toListOf l@?
 toLTextOf :: Getting TBuilder.Builder s Char -> s -> LText
 toLTextOf l = TBuilder.toLazyText . views l TBuilder.singleton
 
 _ByteString :: Iso' BS.ByteString [Word8]
 _ByteString = iso BS.unpack BS.pack
 
+toByteString :: Foldable f => f Word8 -> BS.ByteString
+toByteString = toByteStringOf folded
+
+toByteStringOf :: Getting (Endo [Word8]) s Word8 -> s -> BS.ByteString
+toByteStringOf l = BS.pack . toListOf l
+
 _LByteString :: Iso' LByteString [Word8]
 _LByteString = iso LBS.unpack LBS.pack
+
+toLByteString :: Foldable f => f Word8 -> LByteString
+toLByteString = toLByteStringOf folded
+
+toLByteStringOf :: Getting (Endo [Word8]) s Word8 -> s -> LByteString
+toLByteStringOf l = LBS.pack . toListOf l
 
 -- Vectors -------------------------------------------------------------
 
