@@ -283,6 +283,11 @@ module Lensy
   , ijover
   , ijkover
 
+  -- * mtl
+  , MonadReader (..)
+  , MonadState (..)
+  , MonadWriter (..)
+
   -- | Isos and contructors for common containers.
   , module Lensy.Containers
   , module Lensy.Text
@@ -290,6 +295,7 @@ module Lensy
   , module Lensy.Severable
   , module Control.Monad.Primitive
   , module Control.Lens
+  , grab
   , Semigroup (..)
 
   ) where
@@ -299,7 +305,11 @@ import qualified Prelude.Compat as P
 import Control.Lens hiding (mapOf, lined, worded)
 import Linear (V0 (..), V1 (..), V2 (..), V3 (..), V4 (..))
 
-import Data.Semigroup
+import Control.Monad.Reader
+import Control.Monad.State
+import Control.Monad.Writer
+import Data.Semigroup hiding (First)
+import Data.Maybe
 import Control.Monad.ST
 import Foreign.Storable (Storable (..))
 import Control.Monad.Primitive
@@ -440,6 +450,11 @@ ijover l f = iover l $ \(V2 i j) -> f i j
 
 ijkover :: AnIndexedSetter (V3 i) s t a b -> (i -> i -> i -> a -> b) -> s -> t
 ijkover l f = iover l $ \(V3 i j k) -> f i j k
+
+-- | Grab the first result from a getter. If no result exist this will
+--   throw an error.
+grab :: MonadReader s m => Getting (First a) s a -> m a
+grab l = fromMaybe (error "grab: empty getter") `liftM` preview l
 
 -- module Data.List
 --    (
