@@ -387,7 +387,7 @@ last = preview _last
 init :: Snoc s s a a => s -> Maybe s
 init = preview _init
 
--- | Check is the item is empty.
+-- | Check if the item is empty.
 isEmpty :: AsEmpty a => a -> Bool
 isEmpty = has _Empty
 
