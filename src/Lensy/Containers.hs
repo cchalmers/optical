@@ -93,6 +93,8 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Hashable
 import Data.Monoid
 import Data.Word
+import Data.Foldable (Foldable)
+import Prelude
 
 -- Sequences -----------------------------------------------------------
 

@@ -168,12 +168,12 @@ class T.Traversable t => Witherable t where
 
   -- | Delete all occurences of a foldable container of items from a
   --   witherable.
-  (\\) :: (Foldable f, Witherable t, Eq a) => t a -> f a -> t a
-  xs \\ t = filter (`notElem` v) xs
+  (\\) :: (F.Foldable f, Witherable t, Eq a) => t a -> f a -> t a
+  xs \\ t = filter (`F.notElem` v) xs
     where v = V.fromList (F.toList t)
 
   -- | Delete all occurences not in the foldable container of items.
-  intersect :: (Foldable f, Witherable t, Eq a) => t a -> f a -> t a
+  intersect :: (F.Foldable f, Witherable t, Eq a) => t a -> f a -> t a
   intersect a b = filter (`V.elem` s) a
     where s = V.fromList (F.toList b)
 
@@ -220,7 +220,7 @@ type Across' p f s a = Across p f s s a a
 -- Functions on withers ------------------------------------------------
 
 -- | 'witherOf' is actually 'id', but left for consistency.
-witherOf :: Applicative f => Wither s t a b -> (a -> f (Maybe b)) -> s -> f t
+witherOf :: Applicative f => WitherLike f s t a b -> (a -> f (Maybe b)) -> s -> f t
 witherOf = id
 {-# INLINE witherOf #-}
 
