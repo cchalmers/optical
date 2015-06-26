@@ -3,9 +3,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 
-module Lensy.Text where
+module Optical.Text where
 
-import           Lensy.Containers
+import           Optical.Containers
 
 import           Control.Lens
 

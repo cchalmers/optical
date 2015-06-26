@@ -9,7 +9,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RankNTypes #-}
-module Lensy.Each where
+module Optical.Each where
 
 import Control.Lens -- hiding (coerce)
 -- import Control.Lens.Internal

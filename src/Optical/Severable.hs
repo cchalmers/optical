@@ -6,7 +6,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, StandaloneDeriving, UndecidableInstances, FlexibleContexts #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Lensy.Severable
+-- Module      :  Optical.Severable
 -- Copyright   :  (c) Christopher Chalmers
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 -- Portability :  non-portable
 --
 -----------------------------------------------------------------------------
-module Lensy.Severable where
+module Optical.Severable where
   -- (
   --   -- * Witherable
   --   Witherable(..)
@@ -71,7 +71,7 @@ import qualified Data.Vector.Generic as GV
 -- import Prelude (Functor (..), (.), Maybe (..), maybe, const, ($), id, Bool, Int)
 import Control.Lens
 import qualified Prelude as P
-import Lensy.Witherable
+import Optical.Witherable
 import qualified Data.List as List
 
 -- | A 'Sever' with a particular @f@.
@@ -153,8 +153,8 @@ class Traversable t => Severable t where
   dropWhile = dropWhileOf sever
 
   -- -- | Discard elements while the predicate is 'True', going from the
-  -- --   end of the structure. This is equivilent to @'Lensy.reverse' .
-  -- --   'dropWhile' p . 'Lensy.reverse'@.
+  -- --   end of the structure. This is equivilent to @'Optical.reverse' .
+  -- --   'dropWhile' p . 'Optical.reverse'@.
   -- dropWhileEnd :: (a -> Bool) -> t a -> t a
 
   -- | Equivalent to @('takeWhile' p xs, 'dropWhile' p xs)@.
@@ -384,8 +384,8 @@ class (TraversableWithIndex i t, Severable t) => SeverableWithIndex i t | t -> i
   idropWhile = idropWhileOf isevered
 
   -- -- | Discard elements while the predicate is 'True', going from the
-  -- --   end of the structure. This is equivilent to @'Lensy.reverse' .
-  -- --   'dropWhile' p . 'Lensy.reverse'@.
+  -- --   end of the structure. This is equivilent to @'Optical.reverse' .
+  -- --   'dropWhile' p . 'Optical.reverse'@.
   -- dropWhileEnd :: (a -> Bool) -> t a -> t a
 
   -- | Equivalent to @('takeWhile' p xs, 'dropWhile' p xs)@.

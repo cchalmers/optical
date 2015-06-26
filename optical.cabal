@@ -1,4 +1,4 @@
-name:                lensy-prelude
+name:                optical
 version:             0.1.0.0
 synopsis:            Lens flavoured prelude
 -- description:         
@@ -15,11 +15,11 @@ cabal-version:       >=1.10
 library
   exposed-modules:
     -- Lensy
-    Lensy
-    Lensy.Witherable
-    Lensy.Severable
-    Lensy.Containers
-    Lensy.Text
+    Optical
+    Optical.Witherable
+    Optical.Severable
+    Optical.Containers
+    Optical.Text
   -- other-modules:       
   other-extensions:
     Trustworthy

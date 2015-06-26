@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Lensy
+module Optical
   ( P.either
   , P.all
   , P.and
@@ -306,11 +306,6 @@ module Lensy
   -- , runWriterT
   -- , runWriter
 
-  , MonadError (..)
-  -- , ErrorT
-  -- , Error
-  -- , runErrorT
-
   , MonadIO (..)
   , PrimMonad
 
@@ -320,10 +315,10 @@ module Lensy
   , runST
 
   -- | Isos and contructors for common containers.
-  , module Lensy.Containers
-  , module Lensy.Text
-  , module Lensy.Witherable
-  , module Lensy.Severable
+  , module Optical.Containers
+  , module Optical.Text
+  , module Optical.Witherable
+  , module Optical.Severable
   , module Control.Lens
   , module Foreign
   , grab
@@ -337,9 +332,8 @@ import Control.Lens hiding (mapOf, lined, worded)
 import Linear (V0 (..), V1 (..), V2 (..), V3 (..), V4 (..))
 
 import Control.Monad.Reader
-import Foreign
+import Foreign hiding (Int, Word)
 import Control.Monad.State
-import Control.Monad.Error
 import Control.Monad.Writer
 import Data.Semigroup hiding (First)
 import Data.Maybe
@@ -352,10 +346,10 @@ import Data.Foldable as F
 
 import qualified Data.List as List
 
-import Lensy.Containers
-import Lensy.Text
-import Lensy.Witherable
-import Lensy.Severable
+import Optical.Containers
+import Optical.Text
+import Optical.Witherable
+import Optical.Severable
 
 (^) :: Num a => a -> Int -> a
 -- should really be word or natural

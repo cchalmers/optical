@@ -11,7 +11,7 @@
 {-# LANGUAGE UndecidableInstances   #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Lensy.Witherable
+-- Module      :  Optical.Witherable
 -- Copyright   :  (c) Christopher Chalmers
 -- License     :  BSD3
 --
@@ -23,7 +23,7 @@
 -- functions and extends it to indexed witherables.
 --
 -----------------------------------------------------------------------------
-module Lensy.Witherable
+module Optical.Witherable
   (
     -- * Witherable
     Witherable (..)
