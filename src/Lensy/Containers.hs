@@ -13,7 +13,8 @@ module Lensy.Containers
   , SVector
   , PVector
 
-  -- ** Containers
+  -- * Containers
+  -- ** Seq
   , Seq.Seq
   , _Seq
   , toSeq
@@ -21,51 +22,61 @@ module Lensy.Containers
   , itoSeq
   , itoSeqOf
 
+  -- ** Map
   , Map.Map
   , _Map
   , toMap
   , toMapOf
 
+  -- ** IntMap
   , IntMap.IntMap
   , _IntMap
   , toIntMap
   , toIntMapOf
 
+  -- ** HashMap
   , HashMap.HashMap
   , _HashMap
   , toHashMap
   , toHashMapOf
 
+  -- ** HashSet
   , HashSet.HashSet
   , _HashSet
   , toHashSet
   , toHashSetOf
 
+  -- ** Set
   , Set.Set
   , _Set
   , toSet
   , toSetOf
 
+  -- ** IntSet
   , IntSet.IntSet
   , _IntSet
   , toIntSet
   , toIntSetOf
 
+  -- ** Text
   , Text.Text
   , _Text
   , toText
   , toTextOf
 
+  -- ** Lazy text
   , LText
   , _LText
   , toLText
   , toLTextOf
 
+  -- ** Byte string
   , BS.ByteString
   , _ByteString
   , toByteString
   , toByteStringOf
 
+  -- ** Lazy byte string
   , LByteString
   , _LByteString
   , toLByteString
@@ -248,13 +259,24 @@ toLByteStringOf l = LBS.pack . toListOf l
 
 -- Vectors -------------------------------------------------------------
 
+-- | Lazy chunks of strict text.
 type LText = LText.Text
 
+-- | Lazy chunks of strict byte strings.
 type LByteString = LBS.ByteString
 
+-- | Generic vector constraint.
 type GVector = G.Vector
+
+-- | Boxed vector.
 type BVector = B.Vector
+
+-- | 'Unboxed' vector.
 type UVector = U.Vector
+
+-- | 'Storable' vector.
 type SVector = S.Vector
+
+-- | 'Prim'itive vector.
 type PVector = PV.Vector
 
