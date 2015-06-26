@@ -258,6 +258,7 @@ module Lensy
   , P.Integer
   , P.Word
   , P.Bool (True, False)
+  , bool
   , P.Either(Left, Right)
   , P.Maybe(Just, Nothing)
   , P.Ordering (EQ, GT, LT)
@@ -283,18 +284,48 @@ module Lensy
   , ijover
   , ijkover
 
-  -- * mtl
+  -- * Monads
+
+  -- ** Transformers
+  , MonadTrans (..)
   , MonadReader (..)
+  -- , ReaderT
+  -- , Reader
+  -- , runReaderT
+  -- , runReader
+
   , MonadState (..)
+  -- , StateT
+  -- , State
+  -- , runStateT
+  -- , runState
+
   , MonadWriter (..)
+  -- , WriterT
+  -- , Writer
+  -- , runWriterT
+  -- , runWriter
+
+  , MonadError (..)
+  -- , ErrorT
+  -- , Error
+  -- , runErrorT
+
+  , MonadIO (..)
+  , PrimMonad
+
+  -- * ST
+  , ST
+  , RealWorld
+  , runST
 
   -- | Isos and contructors for common containers.
   , module Lensy.Containers
   , module Lensy.Text
   , module Lensy.Witherable
   , module Lensy.Severable
-  , module Control.Monad.Primitive
   , module Control.Lens
+  , module Foreign
   , grab
   , Semigroup (..)
 
@@ -306,10 +337,13 @@ import Control.Lens hiding (mapOf, lined, worded)
 import Linear (V0 (..), V1 (..), V2 (..), V3 (..), V4 (..))
 
 import Control.Monad.Reader
+import Foreign
 import Control.Monad.State
+import Control.Monad.Error
 import Control.Monad.Writer
 import Data.Semigroup hiding (First)
 import Data.Maybe
+import Data.Bool
 import Control.Monad.ST
 import Foreign.Storable (Storable (..))
 import Control.Monad.Primitive
