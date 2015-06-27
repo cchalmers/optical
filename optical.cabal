@@ -16,6 +16,7 @@ library
   exposed-modules:
     -- Lensy
     Optical
+    Optical.Bit
     Optical.Witherable
     Optical.Severable
     Optical.Containers
@@ -53,4 +54,5 @@ library
     transformers         >= 0.4  && <0.5,
     base-orphans         >= 0.3  && <0.4
   hs-source-dirs:      src
+  ghc-options:         -Wall
   default-language:    Haskell2010
