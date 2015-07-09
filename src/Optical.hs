@@ -484,6 +484,109 @@ ijkover l f = iover l $ \(V3 i j k) -> f i j k
 grab :: MonadReader s m => Getting (First a) s a -> m a
 grab l = fromMaybe (error "grab: empty getter") `liftM` preview l
 
+-- Extas ---------------------------------------------------------------
+
+-- | Only perform the action if the predicate returns 'True'.
+whenM :: Monad m => m Bool -> m () -> m ()
+whenM mbool action = mbool >>= flip when action
+
+-- | Only perform the action if the predicate returns 'False'.
+unlessM :: Monad m => m Bool -> m () -> m ()
+unlessM mbool action = mbool >>= flip unless action
+
+-- -- | Throw a monadic exception from a String
+-- --
+-- -- > erroM = throwM . userError
+-- errorM :: MonadThrow m => String -> m a
+-- errorM = throwM . userError
+
+-- | Perform some operation on 'Just', given the field inside the 'Just'.
+--
+-- > whenJust Nothing  print == return ()
+-- > whenJust (Just 1) print == print 1
+whenJust :: Applicative m => Maybe a -> (a -> m ()) -> m ()
+whenJust mg f = maybe (pure ()) f mg
+
+-- | Like 'whenJust', but where the test can be monadic.
+whenJustM :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
+whenJustM mg f = maybe (return ()) f =<< mg
+
+-- Data.List for Monad
+
+-- | A version of 'partition' that works with a monadic predicate.
+--
+-- > partitionM (Just . even) [1,2,3] == Just ([2], [1,3])
+-- > partitionM (const Nothing) [1,2,3] == Nothing
+partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
+partitionM f [] = return ([], [])
+partitionM f (x:xs) = do
+    res <- f x
+    (as,bs) <- partitionM f xs
+    return ([x | res]++as, [x | not res]++bs)
+
+
+-- -- | A version of 'concatMap' that works with a monadic predicate.
+-- concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
+-- concatMapM f = liftM concat . mapM f
+
+-- -- | A version of 'mapMaybe' that works with a monadic predicate.
+-- mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
+-- mapMaybeM f = liftM catMaybes . mapM f
+
+-- Looping
+
+-- | A looping operation, where the predicate returns 'Left' as a seed for the next loop
+--   or 'Right' to abort the loop.
+loopM :: Monad m => (a -> m (Either a b)) -> a -> m b
+loopM act x = do
+    res <- act x
+    case res of
+        Left x -> loopM act x
+        Right v -> return v
+
+-- | Keep running an operation until it becomes 'False'. As an example:
+--
+-- @
+-- whileM $ do sleep 0.1; notM $ doesFileExist "foo.txt"
+-- readFile "foo.txt"
+-- @
+--
+--   If you need some state persisted between each test, use 'loopM'.
+whileM :: Monad m => m Bool -> m ()
+whileM act = do
+    b <- act
+    when b $ whileM act
+
+-- Booleans
+
+-- | Like @if@, but where the test can be monadic.
+ifM :: Monad m => m Bool -> m a -> m a -> m a
+ifM mb t f = do b <- mb; if b then t else f
+
+-- | Like 'not', but where the test can be monadic.
+notM :: Functor m => m Bool -> m Bool
+notM = fmap not
+
+-- | The lazy '||' operator lifted to a monad. If the first
+--   argument evaluates to 'True' the second argument will not
+--   be evaluated.
+--
+-- > Just True  ||^ undefined  == Just True
+-- > Just False ||^ Just True  == Just True
+-- > Just False ||^ Just False == Just False
+(||^) :: Monad m => m Bool -> m Bool -> m Bool
+(||^) a b = ifM a (return True) b
+
+-- | The lazy '&&' operator lifted to a monad. If the first
+--   argument evaluates to 'False' the second argument will not
+--   be evaluated.
+--
+-- > Just False &&^ undefined  == Just False
+-- > Just True  &&^ Just True  == Just True
+-- > Just True  &&^ Just False == Just False
+(&&^) :: Monad m => m Bool -> m Bool -> m Bool
+(&&^) a b = ifM a b (return False)
+
 -- module Data.List
 --    (
 --    -- * Basic functions
