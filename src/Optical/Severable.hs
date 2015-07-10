@@ -58,6 +58,8 @@ import qualified Data.Foldable                    as F
 import           Data.Functor.Identity
 import           Control.Monad.Trans.State.Strict
 import           Data.Orphans                     ()
+import Data.Tuple (swap)
+import qualified Data.List as L
 import           Data.Profunctor.Unsafe
 import           Prelude                          hiding (drop, dropWhile,
                                                    filter, init, span, splitAt,
@@ -97,6 +99,9 @@ type Through p f s t a b = p a (f (Maybe b)) -> s -> f (t, s)
 
 -- | A simple 'Across'.
 type Through' p f s a = Through p f s s a a
+
+treverse :: Traversable t => t a -> t a
+treverse = partsOf traverse %~ reverse
 
 -- | 'Traversable' with the ability to break into two at some point. The follow
 --
@@ -162,11 +167,48 @@ class Traversable t => Severable t where
 
   -- End variants ------------------------------------------------------
 
-  -- -- | Discard elements while the predicate is 'True', going from the
-  -- --   end of the structure. This is equivilent to @'Optical.reverse' .
-  -- --   'dropWhile' p . 'Optical.reverse'@.
-  -- dropWhileEnd :: (a -> Bool) -> t a -> t a
+  -- | Take a number of elements from the end of the list.
+  --
+  -- > takeEnd 3 "hello"  == "llo"
+  -- > takeEnd 5 "bye"    == "bye"
+  -- > takeEnd (-1) "bye" == ""
+  -- > \i xs -> takeEnd i xs `isSuffixOf` xs
+  -- > \i xs -> length (takeEnd i xs) == min (max 0 i) (length xs)
+  takeEnd :: Int -> t a -> t a
+  takeEnd i = treverse . take i . treverse
 
+  -- | Drop a number of elements from the end of the list.
+  --
+  -- > dropEnd 3 "hello"  == "he"
+  -- > dropEnd 5 "bye"    == ""
+  -- > dropEnd (-1) "bye" == "bye"
+  -- > \i xs -> dropEnd i xs `isPrefixOf` xs
+  -- > \i xs -> length (dropEnd i xs) == max 0 (length xs - max 0 i)
+  -- > \i -> take 3 (dropEnd 5 [i..]) == take 3 [i..]
+  dropEnd :: Int -> t a -> t a
+  dropEnd i = treverse . drop i . treverse
+
+  -- | @'splitAtEnd' n xs@ returns a split where the second element tries to
+  --   contain @n@ elements.
+  --
+  -- > splitAtEnd 3 "hello" == ("he","llo")
+  -- > splitAtEnd 3 "he"    == ("", "he")
+  -- > \i xs -> uncurry (++) (splitAt i xs) == xs
+  -- > \i xs -> splitAtEnd i xs == (dropEnd i xs, takeEnd i xs)
+  splitAtEnd :: Int -> t a -> (t a, t a)
+  splitAtEnd i = bimap treverse treverse . swap . splitAt i . treverse
+
+  -- | A version of 'takeWhile' operating from the end.
+  --
+  -- > takeWhileEnd even [2,3,4,6] == [4,6]
+  takeWhileEnd :: (a -> Bool) -> t a -> t a
+  takeWhileEnd f = treverse . takeWhile f . treverse
+
+  -- | Discard elements while the predicate is 'True', going from the
+  --   end of the structure. This is equivilent to @'Optical.reverse' .
+  --   'dropWhile' p . 'Optical.reverse'@.
+  dropWhileEnd :: (a -> Bool) -> t a -> t a
+  dropWhileEnd f = treverse . dropWhile f . treverse
 
 --   -- | Drops the given prefix if it exists. Returns 'Nothing' if the
 --   --   prefix is not present.
@@ -273,6 +315,14 @@ instance Severable [] where
   dropWhile = P.dropWhile
   span = P.span
   break = P.break
+  takeWhileEnd f = P.reverse . P.takeWhile f . P.reverse
+  dropWhileEnd = L.dropWhileEnd
+  takeEnd i xs0 = f xs0 (drop i xs0)
+    where f (_:xs) (_:ys) = f xs ys
+          f xs     _      = xs
+  dropEnd i xs0 = f xs0 (drop i xs0)
+    where f (x:xs) (_:ys) = x : f xs ys
+          f _      _      = []
   {-# INLINE take         #-}
   {-# INLINE drop         #-}
   {-# INLINE splitAt      #-}
@@ -280,6 +330,8 @@ instance Severable [] where
   {-# INLINE dropWhile    #-}
   {-# INLINE span         #-}
   {-# INLINE break        #-}
+  {-# INLINE takeWhileEnd        #-}
+  {-# INLINE dropWhileEnd        #-}
 
 instance Severable IM.IntMap where
   sever f = fmap (bimap IM.fromList IM.fromAscList) . sever (\(i, a) -> fmap ((,) i) <$> f a) . IM.toList
@@ -419,6 +471,9 @@ instance SeverableWithIndex Int [] where
 
 instance SeverableWithIndex Int S.Seq where
   isever f = fmap (bimap S.fromList S.fromList) . isever f . F.toList
+
+instance SeverableWithIndex Int V.Vector where
+  isever f = fmap (bimap V.fromList V.fromList) . isever f . V.toList
 
 -- ------------------------------------------------------------------------
 -- -- Predefined severs
