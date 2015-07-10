@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP                    #-}
+-- {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DeriveFoldable         #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveTraversable      #-}
@@ -53,7 +53,7 @@ module Optical.Witherable
   , chipped
   , ichipped
   , witherVector
-  -- , witherMaybe
+  , witherText
 
     -- ** Using 'Wither's
   , witherOf
@@ -87,6 +87,7 @@ import           Control.Lens.Internal
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.State.Strict
 import           Data.Bool
+import qualified Data.ByteString                  as BS
 import qualified Data.Foldable                    as F
 import           Data.Functor.Identity
 import           Data.Hashable
@@ -101,11 +102,13 @@ import           Data.Profunctor.Rep
 import           Data.Profunctor.Sieve
 import qualified Data.Sequence                    as S
 import qualified Data.Set                         as Set
+import qualified Data.Text                        as Text
 import qualified Data.Traversable                 as T
 import qualified Data.Vector                      as V
-#if (MIN_VERSION_base(4,7,0))
+import           Data.Word
+-- #if (MIN_VERSION_base(4,7,0))
 import           Data.Proxy
-#endif
+-- #endif
 import           Control.Lens
 import           Data.Profunctor.Unsafe
 import qualified Data.Vector.Generic              as GV
@@ -177,9 +180,9 @@ class T.Traversable t => Witherable t where
   intersect a b = filter (`V.elem` s) a
     where s = V.fromList (F.toList b)
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
+-- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
   {-# MINIMAL wither | mapMaybe | catMaybes #-}
-#endif
+-- #endif
 
 ------------------------------------------------------------------------
 -- Wither type
@@ -350,10 +353,10 @@ instance (Eq k, Hashable k) => Witherable (HM.HashMap k) where
   filter = HM.filter
   {-# INLINE filter #-}
 
-#if (MIN_VERSION_base(4,7,0))
+-- #if (MIN_VERSION_base(4,7,0))
 instance Witherable Proxy where
   wither _ Proxy = pure Proxy
-#endif
+-- #endif
 
 instance Witherable (Const r) where
   wither _ (Const r) = pure (Const r)
@@ -557,6 +560,28 @@ witherVector f = fmap GV.fromList . withered f . GV.toList
 withered :: Witherable t => IndexedWither Int (t a) (t b) a b
 withered = conjoined wither (indexing wither)
 {-# INLINE withered #-}
+
+-- | A wither over text characters.
+witherText :: IndexedWither' Int Text.Text Char
+witherText f = fmap Text.pack . withered f . Text.unpack
+{-# INLINE [0] witherText #-}
+
+{-# RULES
+"catMaybe text wither"
+  witherText = sets (\f -> Text.pack . mapMaybe f . Text.unpack)
+    :: AWither' Text.Text Char
+  #-}
+
+-- | A wither over 'BS.BytesString' bytes.
+witherBytes :: IndexedWither' Int BS.ByteString Word8
+witherBytes f = fmap BS.pack . withered f . BS.unpack
+{-# INLINE [0] witherBytes #-}
+
+{-# RULES
+"catMaybe byte string wither"
+  witherBytes = sets (\f -> BS.pack . mapMaybe f . BS.unpack)
+    :: AWither' BS.ByteString Word8
+  #-}
 
 -- | A wither over a traversable structure of 'Maybe's. Includes an
 --   index according to it's ordinal position (including any 'Nothing'
