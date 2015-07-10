@@ -1,9 +1,15 @@
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE CPP                    #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, StandaloneDeriving, UndecidableInstances, FlexibleContexts #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE Rank2Types             #-}
+{-# LANGUAGE StandaloneDeriving     #-}
+{-# LANGUAGE UndecidableInstances   #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Optical.Severable
@@ -37,42 +43,30 @@ module Optical.Severable where
   -- , Chipped(..)
   -- ) where
 
-import Data.Bool
-import Data.Bifunctor
-import Control.Lens.Internal
-import Control.Comonad
-import Data.Profunctor.Rep
-import qualified Data.Maybe as Maybe
-import qualified Data.IntMap.Lazy as IM
-import Data.Profunctor.Sieve
-import qualified Data.Map.Lazy as M
-import qualified Data.Sequence as S
-import qualified Data.Vector as V
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Set as Set
-import qualified Data.HashSet as HSet
-import Control.Applicative
-import qualified Data.Traversable as T
-import qualified Data.Foldable as F
-import Data.Hashable
-import Data.Functor.Identity
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State.Strict
-import Data.Monoid
-import Data.Orphans ()
--- #if (MIN_VERSION_base(4,7,0))
-import Data.Proxy
--- #endif
-import qualified Prelude
-import qualified Data.List as List
-import Prelude hiding (filter, init, take, drop, takeWhile, dropWhile, span, splitAt)
-import Data.Profunctor.Unsafe
+import           Control.Comonad
+import           Control.Lens.Internal
+import           Data.Bifunctor
+import           Data.Bool
+import           Data.Profunctor.Rep
+import qualified Data.IntMap.Lazy                 as IM
+import qualified Data.Map.Lazy                    as M
+import           Data.Profunctor.Sieve
+import qualified Data.Sequence                    as S
+import qualified Data.Vector                      as V
+import           Control.Applicative
+import qualified Data.Foldable                    as F
+import           Data.Functor.Identity
+import           Control.Monad.Trans.State.Strict
+import           Data.Orphans                     ()
+import Data.Tuple (swap)
+import qualified Data.List as L
+import           Data.Profunctor.Unsafe
+import           Prelude                          hiding (drop, dropWhile,
+                                                   filter, init, span, splitAt,
+                                                   take, takeWhile)
 import qualified Data.Vector.Generic as GV
--- import Prelude (Functor (..), (.), Maybe (..), maybe, const, ($), id, Bool, Int)
-import Control.Lens
-import qualified Prelude as P
-import Optical.Witherable
-import qualified Data.List as List
+import           Control.Lens
+import qualified Prelude                          as P
 
 -- | A 'Sever' with a particular @f@.
 type SeverLike f s t a b = (a -> f (Maybe b)) -> s -> f (t, s)
@@ -105,6 +99,9 @@ type Through p f s t a b = p a (f (Maybe b)) -> s -> f (t, s)
 
 -- | A simple 'Across'.
 type Through' p f s a = Through p f s s a a
+
+treverse :: Traversable t => t a -> t a
+treverse = partsOf traverse %~ reverse
 
 -- | 'Traversable' with the ability to break into two at some point. The follow
 --
@@ -152,11 +149,6 @@ class Traversable t => Severable t where
   dropWhile :: (a -> Bool) -> t a -> t a
   dropWhile = dropWhileOf sever
 
-  -- -- | Discard elements while the predicate is 'True', going from the
-  -- --   end of the structure. This is equivilent to @'Optical.reverse' .
-  -- --   'dropWhile' p . 'Optical.reverse'@.
-  -- dropWhileEnd :: (a -> Bool) -> t a -> t a
-
   -- | Equivalent to @('takeWhile' p xs, 'dropWhile' p xs)@.
   span :: (a -> Bool) -> t a -> (t a, t a)
   span = spanOf sever
@@ -173,6 +165,50 @@ class Traversable t => Severable t where
   break :: (a -> Bool) -> t a -> (t a, t a)
   break p = span (not . p)
 
+  -- End variants ------------------------------------------------------
+
+  -- | Take a number of elements from the end of the list.
+  --
+  -- > takeEnd 3 "hello"  == "llo"
+  -- > takeEnd 5 "bye"    == "bye"
+  -- > takeEnd (-1) "bye" == ""
+  -- > \i xs -> takeEnd i xs `isSuffixOf` xs
+  -- > \i xs -> length (takeEnd i xs) == min (max 0 i) (length xs)
+  takeEnd :: Int -> t a -> t a
+  takeEnd i = treverse . take i . treverse
+
+  -- | Drop a number of elements from the end of the list.
+  --
+  -- > dropEnd 3 "hello"  == "he"
+  -- > dropEnd 5 "bye"    == ""
+  -- > dropEnd (-1) "bye" == "bye"
+  -- > \i xs -> dropEnd i xs `isPrefixOf` xs
+  -- > \i xs -> length (dropEnd i xs) == max 0 (length xs - max 0 i)
+  -- > \i -> take 3 (dropEnd 5 [i..]) == take 3 [i..]
+  dropEnd :: Int -> t a -> t a
+  dropEnd i = treverse . drop i . treverse
+
+  -- | @'splitAtEnd' n xs@ returns a split where the second element tries to
+  --   contain @n@ elements.
+  --
+  -- > splitAtEnd 3 "hello" == ("he","llo")
+  -- > splitAtEnd 3 "he"    == ("", "he")
+  -- > \i xs -> uncurry (++) (splitAt i xs) == xs
+  -- > \i xs -> splitAtEnd i xs == (dropEnd i xs, takeEnd i xs)
+  splitAtEnd :: Int -> t a -> (t a, t a)
+  splitAtEnd i = bimap treverse treverse . swap . splitAt i . treverse
+
+  -- | A version of 'takeWhile' operating from the end.
+  --
+  -- > takeWhileEnd even [2,3,4,6] == [4,6]
+  takeWhileEnd :: (a -> Bool) -> t a -> t a
+  takeWhileEnd f = treverse . takeWhile f . treverse
+
+  -- | Discard elements while the predicate is 'True', going from the
+  --   end of the structure. This is equivilent to @'Optical.reverse' .
+  --   'dropWhile' p . 'Optical.reverse'@.
+  dropWhileEnd :: (a -> Bool) -> t a -> t a
+  dropWhileEnd f = treverse . dropWhile f . treverse
 
 --   -- | Drops the given prefix if it exists. Returns 'Nothing' if the
 --   --   prefix is not present.
@@ -189,9 +225,9 @@ class Traversable t => Severable t where
 --         []   -> (Just a, (b, []))
 
 
--- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
-  -- {-# MINIMAL wither | mapMaybe | catMaybes #-}
--- #endif
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
+  {-# MINIMAL sever #-}
+#endif
 
 ------------------------------------------------------------------------
 -- Wither type
@@ -266,12 +302,6 @@ instance Severable Maybe where
   sever _ Nothing  = pure (Nothing, Nothing)
   {-# INLINE sever #-}
 
--- instance Monoid e => Witherable (Either e) where
---   wither f (Right a) = maybe (Left mempty, Right a) (\b -> (Right b, Left mempty)) <$> f a
---   wither _ (Left e)  = pure (Left e, )
---   {-# INLINE wither #-}
-
--- sever :: Applicative f => (a -> f (Maybe b)) -> t a -> f (t b, t a)
 instance Severable [] where
   sever f = go where
     go xss@(x:xs) = maybe (const ([], xss)) (first . (:)) <$> f x <*> go xs
@@ -285,6 +315,14 @@ instance Severable [] where
   dropWhile = P.dropWhile
   span = P.span
   break = P.break
+  takeWhileEnd f = P.reverse . P.takeWhile f . P.reverse
+  dropWhileEnd = L.dropWhileEnd
+  takeEnd i xs0 = f xs0 (drop i xs0)
+    where f (_:xs) (_:ys) = f xs ys
+          f xs     _      = xs
+  dropEnd i xs0 = f xs0 (drop i xs0)
+    where f (x:xs) (_:ys) = x : f xs ys
+          f _      _      = []
   {-# INLINE take         #-}
   {-# INLINE drop         #-}
   {-# INLINE splitAt      #-}
@@ -292,6 +330,8 @@ instance Severable [] where
   {-# INLINE dropWhile    #-}
   {-# INLINE span         #-}
   {-# INLINE break        #-}
+  {-# INLINE takeWhileEnd        #-}
+  {-# INLINE dropWhileEnd        #-}
 
 instance Severable IM.IntMap where
   sever f = fmap (bimap IM.fromList IM.fromAscList) . sever (\(i, a) -> fmap ((,) i) <$> f a) . IM.toList
@@ -309,23 +349,6 @@ instance Ord k => Severable (M.Map k) where
   drop n = M.fromAscList . P.drop n . M.toAscList
   {-# INLINE drop #-}
 
--- instance (Eq k, Hashable k) => Severable (HM.HashMap k) where
---   sever f = fmap (bimap HM.fromList HM.fromList) . sever (\(i, a) -> fmap ((,) i) <$> f a) . HM.toList
---   {-# INLINE sever #-}
---   take n = HM.fromList . P.take n . HM.toList
---   {-# INLINE take #-}
---   drop n = HM.fromList . P.drop n . HM.toList
---   {-# INLINE drop #-}
-
--- #if (MIN_VERSION_base(4,7,0))
--- instance Witherable Proxy where
---   wither _ Proxy = pure Proxy
--- #endif
-
--- instance Witherable (Const r) where
---   wither _ (Const r) = pure (Const r)
---   {-# INLINABLE wither #-}
-
 instance Severable V.Vector where
   sever f = fmap (bimap V.fromList V.fromList) . sever f . V.toList
   {-# INLINE sever #-}
@@ -333,6 +356,8 @@ instance Severable V.Vector where
   {-# INLINE take #-}
   drop = V.drop
   {-# INLINE drop #-}
+  splitAt = V.splitAt
+  {-# INLINE splitAt #-}
   takeWhile = V.takeWhile
   {-# INLINE takeWhile #-}
   dropWhile = V.dropWhile
@@ -345,6 +370,8 @@ instance Severable S.Seq where
   {-# INLINE take #-}
   drop = S.drop
   {-# INLINE drop #-}
+  splitAt = S.splitAt
+  {-# INLINE splitAt #-}
   takeWhile = S.takeWhileL
   {-# INLINE takeWhile #-}
   dropWhile = S.dropWhileL
@@ -442,17 +469,20 @@ instance SeverableWithIndex Int [] where
     go _ []         = pure ([], [])
   {-# INLINE isever #-}
 
--- instance SeverableWithIndex Int S.Seq where
---   isever f = fmap S.fromList . isever f . F.toList
+instance SeverableWithIndex Int S.Seq where
+  isever f = fmap (bimap S.fromList S.fromList) . isever f . F.toList
+
+instance SeverableWithIndex Int V.Vector where
+  isever f = fmap (bimap V.fromList V.fromList) . isever f . V.toList
 
 -- ------------------------------------------------------------------------
 -- -- Predefined severs
 -- ------------------------------------------------------------------------
 
--- -- | A sever over a generic vector.
--- severVector :: (GV.Vector v a, GV.Vector w b) => IndexedSever Int (v a) (w b) a b
--- severVector f = fmap GV.fromList . severed f . GV.toList
--- {-# INLINE severVector #-}
+-- | A sever over a generic vector.
+severVector :: (GV.Vector v a, GV.Vector w b) => IndexedSever Int (v a) (w b) a b
+severVector f = fmap (bimap GV.fromList GV.fromList) . severed f . GV.toList
+{-# INLINE severVector #-}
 
 -- {-# RULES
 --   "catMaybe vector sever"
@@ -460,24 +490,8 @@ instance SeverableWithIndex Int [] where
 --       :: (GV.Vector v a, GV.Vector w b) => ASever (v a) (w b) a b
 --   #-}
 
--- -- | A sever over a traversable structure of 'Maybe's.
--- severMaybe :: Traversable t => Sever (t (Maybe a)) (t (Maybe b)) a b
--- severMaybe f = fmap getChipped . sever f .# Chipped
--- {-# INLINE severMaybe #-}
-
--- -- | 'sever' with an index according to its ordinal position.
--- severed :: Severable t => IndexedSever Int (t a) (t b) a b
--- severed = conjoined sever (indexing sever)
--- {-# INLINE severed #-}
-
--- -- | A sever over a traversable structure of 'Maybe's. Includes an
--- --   index according to it's ordinal position.
--- chipped :: Traversable t => IndexedSever Int (t (Maybe a)) (t (Maybe b)) a b
--- chipped = traversed <. sever -- XXX index includes nothing values!
--- {-# INLINE chipped #-}
-
--- -- | A sever over a traversable structure of 'Maybe's.
--- ichipped :: TraversableWithIndex i t => IndexedSever i (t (Maybe a)) (t (Maybe b)) a b
--- ichipped = itraversed <. sever
--- {-# INLINE ichipped #-}
+-- | 'sever' with an index according to its ordinal position.
+severed :: Severable t => IndexedSever Int (t a) (t b) a b
+severed = conjoined sever (indexing sever)
+{-# INLINE severed #-}
 
