@@ -578,7 +578,7 @@ witherBytes f = fmap BS.pack . withered f . BS.unpack
 {-# INLINE [0] witherBytes #-}
 
 {-# RULES
-"catMaybe byte string wither"
+"catMaybe bytestring wither"
   witherBytes = sets (\f -> BS.pack . mapMaybe f . BS.unpack)
     :: AWither' BS.ByteString Word8
   #-}

@@ -8,10 +8,38 @@
 module Optical.Containers
   (
   -- ** vectors
-    BVector
+    GVector
+  , _GVector
+  , toGVector
+  , toGVectorOf
+  , itoGVector
+  , itoGVectorOf
+
+  , BVector
+  , _BVector
+  , toBVector
+  , toBVectorOf
+  , itoBVector
+  , itoBVectorOf
+
   , UVector
+  , _UVector
+  , toUVector
+  , toUVectorOf
+  , itoUVector
+  , itoUVectorOf
+
   , SVector
+  , _SVector
+  , toSVector
+  , toSVectorOf
+
   , PVector
+  , _PVector
+  , toPVector
+  , toPVectorOf
+
+  , byteVector
 
   -- * Containers
   -- ** Seq
@@ -105,8 +133,141 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Hashable
 import Data.Monoid
 import Data.Word
-import Data.Foldable (Foldable)
+import Data.Foldable (Foldable, toList)
+import           Data.ByteString.Internal (ByteString (PS))
+import           Data.Vector.Storable     (unsafeFromForeignPtr,
+                                           unsafeToForeignPtr)
 import Prelude
+
+-- Vectors -------------------------------------------------------------
+
+-- | Generic vector constraint.
+type GVector = G.Vector
+
+_GVector :: (GVector v a, GVector w b) => Iso (v a) (w b) [a] [b]
+_GVector = iso G.toList G.fromList
+{-# INLINE _GVector #-}
+
+_GVector' :: GVector v a => Iso' (v a) [a]
+_GVector' = _GVector
+{-# INLINE _GVector' #-}
+
+toGVector :: (Foldable f, GVector v a) => f a -> v a
+toGVector = G.fromList . toList
+{-# INLINE toGVector #-}
+
+toGVectorOf :: GVector v a => Getting (Endo [a]) s a -> s -> v a
+toGVectorOf l = G.fromList . toListOf l
+{-# INLINE toGVectorOf #-}
+
+itoGVector :: (FoldableWithIndex i f, GVector v (i, a)) => f a -> v (i, a)
+itoGVector = G.fromList . itoList
+{-# INLINE itoGVector #-}
+
+itoGVectorOf :: GVector v (i, a) => IndexedGetting i (Endo [(i,a)]) s a -> s -> v (i,a)
+itoGVectorOf l = G.fromList . itoListOf l
+{-# INLINE itoGVectorOf #-}
+
+-- | Boxed vector.
+type BVector = B.Vector
+
+_BVector :: Iso (BVector a) (BVector b) [a] [b]
+_BVector = _GVector
+{-# INLINE _BVector #-}
+
+toBVector :: Foldable f => f a -> BVector a
+toBVector = G.fromList . toList
+{-# INLINE toBVector #-}
+
+toBVectorOf :: Getting (Endo [a]) s a -> s -> BVector a
+toBVectorOf l = G.fromList . toListOf l
+{-# INLINE toBVectorOf #-}
+
+itoBVector :: FoldableWithIndex i f => f a -> BVector (i, a)
+itoBVector = G.fromList . itoList
+{-# INLINE itoBVector #-}
+
+itoBVectorOf :: IndexedGetting i (Endo [(i,a)]) s a -> s -> BVector (i,a)
+itoBVectorOf l = G.fromList . itoListOf l
+{-# INLINE itoBVectorOf #-}
+
+-- | 'Unboxed' vector.
+type UVector = U.Vector
+
+_UVector :: (U.Unbox a, U.Unbox b) => Iso (UVector a) (UVector b) [a] [b]
+_UVector = _GVector
+{-# INLINE _UVector #-}
+
+toUVector :: (Foldable f, U.Unbox a) => f a -> UVector a
+toUVector = G.fromList . toList
+{-# INLINE toUVector #-}
+
+toUVectorOf :: U.Unbox a => Getting (Endo [a]) s a -> s -> UVector a
+toUVectorOf l = G.fromList . toListOf l
+{-# INLINE toUVectorOf #-}
+
+itoUVector :: (U.Unbox i, U.Unbox a, FoldableWithIndex i f) => f a -> UVector (i, a)
+itoUVector = G.fromList . itoList
+{-# INLINE itoUVector #-}
+
+itoUVectorOf :: (U.Unbox i, U.Unbox a) => IndexedGetting i (Endo [(i,a)]) s a -> s -> UVector (i,a)
+itoUVectorOf l = G.fromList . itoListOf l
+{-# INLINE itoUVectorOf #-}
+
+-- | 'Storable' vector.
+type SVector = S.Vector
+
+_SVector :: (S.Storable a, S.Storable b) => Iso (SVector a) (SVector b) [a] [b]
+_SVector = _GVector
+{-# INLINE _SVector #-}
+
+toSVector :: (Foldable f, S.Storable a) => f a -> SVector a
+toSVector = G.fromList . toList
+{-# INLINE toSVector #-}
+
+toSVectorOf :: S.Storable a => Getting (Endo [a]) s a -> s -> SVector a
+toSVectorOf l = G.fromList . toListOf l
+{-# INLINE toSVectorOf #-}
+
+-- | 'Prim'itive vector.
+type PVector = PV.Vector
+
+_PVector :: (PV.Prim a, PV.Prim b) => Iso (PVector a) (PVector b) [a] [b]
+_PVector = _GVector
+{-# INLINE _PVector #-}
+
+toPVector :: (Foldable f, PV.Prim a) => f a -> PVector a
+toPVector = G.fromList . toList
+{-# INLINE toPVector #-}
+
+toPVectorOf :: PV.Prim a => Getting (Endo [a]) s a -> s -> PVector a
+toPVectorOf l = G.fromList . toListOf l
+{-# INLINE toPVectorOf #-}
+
+-- | O(1) isomorphism between a 'ByteString' and a vector of 'Word8'.
+byteVector :: Iso' ByteString (SVector Word8)
+byteVector = iso toByteVector fromByteVector
+  where
+  toByteVector (PS fptr offset idx) =
+    unsafeFromForeignPtr fptr offset idx
+
+  fromByteVector v = PS fptr offset idx
+    where (fptr, offset, idx) = unsafeToForeignPtr v
+{-# INLINE byteVector #-}
+
+-- primStored :: (PV.Prim a, S.Storable a) => Prism' (PVector a) (SVector a)
+-- primStored = prism' toPrim fromPrim
+--   where
+--     toPrim
+
+-- data ForeignPtr a = ForeignPtr Addr# ForeignPtrContents
+
+-- data ForeignPtrContents = PlainForeignPtr !(IORef (Finalizers, [IO ()]))
+--                         | MallocPtr      (MutableByteArray# RealWorld) !(IORef (Finalizers, [IO ()]))
+--                         | PlainPtr       (MutableByteArray# RealWorld)
+
+-- toPtr :: MutableByteArray -> ForeignPtr
+
 
 -- Sequences -----------------------------------------------------------
 
@@ -256,7 +417,6 @@ toLByteString = toLByteStringOf folded
 toLByteStringOf :: Getting (Endo [Word8]) s Word8 -> s -> LByteString
 toLByteStringOf l = LBS.pack . toListOf l
 {-# INLINE toLByteStringOf #-}
-
 -- Vectors -------------------------------------------------------------
 
 -- | Lazy chunks of strict text.
@@ -264,19 +424,3 @@ type LText = LText.Text
 
 -- | Lazy chunks of strict byte strings.
 type LByteString = LBS.ByteString
-
--- | Generic vector constraint.
-type GVector = G.Vector
-
--- | Boxed vector.
-type BVector = B.Vector
-
--- | 'Unboxed' vector.
-type UVector = U.Vector
-
--- | 'Storable' vector.
-type SVector = S.Vector
-
--- | 'Prim'itive vector.
-type PVector = PV.Vector
-
