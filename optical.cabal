@@ -19,6 +19,7 @@ library
     Optical.Bit
     Optical.Witherable
     Optical.Severable
+    Optical.Patterns
     Optical.Containers
     Optical.Text
   -- other-modules:       
