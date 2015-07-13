@@ -146,7 +146,7 @@ class T.Traversable t => Witherable t where
 
   -- | Extract only the 'Just' values, discarding 'Nothing' values.
   catMaybes :: t (Maybe a) -> t a
-  catMaybes = catMaybesOf wither
+  catMaybes = mapMaybe id
   {-# INLINE catMaybes #-}
 
   -- | 'filter' with effects.
