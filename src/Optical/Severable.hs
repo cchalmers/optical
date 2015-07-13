@@ -100,8 +100,8 @@ type Through p f s t a b = p a (f (Maybe b)) -> s -> f (t, s)
 -- | A simple 'Across'.
 type Through' p f s a = Through p f s s a a
 
-treverse :: Traversable t => t a -> t a
-treverse = partsOf traverse %~ reverse
+tReverse :: Traversable t => t a -> t a
+tReverse = partsOf traverse %~ reverse
 
 -- | 'Traversable' with the ability to break into two at some point. The follow
 --
@@ -175,7 +175,7 @@ class Traversable t => Severable t where
   -- > \i xs -> takeEnd i xs `isSuffixOf` xs
   -- > \i xs -> length (takeEnd i xs) == min (max 0 i) (length xs)
   takeEnd :: Int -> t a -> t a
-  takeEnd i = treverse . take i . treverse
+  takeEnd i = tReverse . take i . tReverse
 
   -- | Drop a number of elements from the end of the list.
   --
@@ -186,7 +186,7 @@ class Traversable t => Severable t where
   -- > \i xs -> length (dropEnd i xs) == max 0 (length xs - max 0 i)
   -- > \i -> take 3 (dropEnd 5 [i..]) == take 3 [i..]
   dropEnd :: Int -> t a -> t a
-  dropEnd i = treverse . drop i . treverse
+  dropEnd i = tReverse . drop i . tReverse
 
   -- | @'splitAtEnd' n xs@ returns a split where the second element tries to
   --   contain @n@ elements.
@@ -196,19 +196,19 @@ class Traversable t => Severable t where
   -- > \i xs -> uncurry (++) (splitAt i xs) == xs
   -- > \i xs -> splitAtEnd i xs == (dropEnd i xs, takeEnd i xs)
   splitAtEnd :: Int -> t a -> (t a, t a)
-  splitAtEnd i = bimap treverse treverse . swap . splitAt i . treverse
+  splitAtEnd i = bimap tReverse tReverse . swap . splitAt i . tReverse
 
   -- | A version of 'takeWhile' operating from the end.
   --
   -- > takeWhileEnd even [2,3,4,6] == [4,6]
   takeWhileEnd :: (a -> Bool) -> t a -> t a
-  takeWhileEnd f = treverse . takeWhile f . treverse
+  takeWhileEnd f = tReverse . takeWhile f . tReverse
 
   -- | Discard elements while the predicate is 'True', going from the
   --   end of the structure. This is equivilent to @'Optical.reverse' .
   --   'dropWhile' p . 'Optical.reverse'@.
   dropWhileEnd :: (a -> Bool) -> t a -> t a
-  dropWhileEnd f = treverse . dropWhile f . treverse
+  dropWhileEnd f = tReverse . dropWhile f . tReverse
 
 --   -- | Drops the given prefix if it exists. Returns 'Nothing' if the
 --   --   prefix is not present.
