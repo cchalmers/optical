@@ -122,7 +122,9 @@ module Optical
   , P.mapM
   , P.sequence
   , P.sequenceA
-  -- , P.traverse
+  , P.traverse
+  , for
+  , for_
   , (P.*>)
   , (P.<*)
   , (P.<*>)
@@ -343,6 +345,7 @@ import Foreign.Storable (Storable (..))
 import Control.Monad.Primitive
 import Data.Distributive
 import Data.Foldable as F
+import Data.Traversable
 
 import qualified Data.List as List
 
