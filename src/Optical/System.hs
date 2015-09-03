@@ -26,3 +26,4 @@ ls dir = do
   dir' <- liftIO $ canonicalizePath dir
   ps <- liftIO $ drop 2 <$> getDirectoryContents dir'
   return $ map (dir' </>) ps
+

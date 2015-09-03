@@ -64,6 +64,8 @@ module Optical.Witherable
   , deleteOf
   , ordNubOf
   , hashNubOf
+  , rightsOf
+  , leftsOf
 
     -- ** Using indexed 'Wither's
   , iwitherOf
@@ -166,19 +168,48 @@ class T.Traversable t => Witherable t where
   partition p t = (filter p t, filter (not . p) t)
 
   -- | Delete all occurences of an item.
-  delete :: (Witherable t, Eq a) => a -> t a -> t a
+  delete :: Eq a => a -> t a -> t a
   delete a = filter (/= a)
 
   -- | Delete all occurences of a foldable container of items from a
   --   witherable.
-  (\\) :: (F.Foldable f, Witherable t, Eq a) => t a -> f a -> t a
+  (\\) :: (F.Foldable f, Eq a) => t a -> f a -> t a
   xs \\ t = filter (`F.notElem` v) xs
     where v = V.fromList (F.toList t)
 
   -- | Delete all occurences not in the foldable container of items.
-  intersect :: (F.Foldable f, Witherable t, Eq a) => t a -> f a -> t a
+  intersect :: (F.Foldable f, Eq a) => t a -> f a -> t a
   intersect a b = filter (`V.elem` s) a
     where s = V.fromList (F.toList b)
+
+  -- | Extract all the 'Left' elements from a witherable of 'Either's,
+  --   in order.
+  --
+  -- ==== __Examples__
+  --
+  -- Basic usage:
+  --
+  -- >>> let list = [ Left "foo", Right 3, Left "bar", Right 7, Left "baz" ]
+  -- >>> lefts list
+  -- ["foo","bar","baz"]
+  --
+  lefts :: t (Either a b) -> t a
+  lefts = mapMaybe (preview _Left)
+
+  -- | Extract all the 'Right' elements from a witherable of 'Either's,
+  --   in order.
+  --
+  -- ==== __Examples__
+  --
+  -- Basic usage:
+  --
+  -- >>> let list = [ Left "foo", Right 3, Left "bar", Right 7, Left "baz" ]
+  -- >>> rights list
+  -- [3,7]
+  --
+  rights :: t (Either a b) -> t b
+  rights = mapMaybe (preview _Right)
+
 
 -- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
   {-# MINIMAL wither | mapMaybe | catMaybes #-}
@@ -310,6 +341,13 @@ ordNub = ordNubOf wither
 hashNub :: (Witherable t, Eq a, Hashable a) => t a -> t a
 hashNub = hashNubOf wither
 {-# INLINE hashNub #-}
+
+rightsOf :: AWither s t (Either a b) b -> s -> t
+rightsOf w = mapMaybeOf w (preview _Right)
+
+leftsOf :: AWither s t (Either a b) a -> s -> t
+leftsOf w = mapMaybeOf w (preview _Left)
+
 
 -- Instances -----------------------------------------------------------
 
