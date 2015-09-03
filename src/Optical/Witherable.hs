@@ -1,5 +1,6 @@
 -- {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FlexibleContexts       #-}
@@ -64,8 +65,12 @@ module Optical.Witherable
   , deleteOf
   , ordNubOf
   , hashNubOf
-  , rightsOf
   , leftsOf
+  , rightsOf
+  , mapLeftsOf
+  , mapRightsOf
+  , filterOver
+
 
     -- ** Using indexed 'Wither's
   , iwitherOf
@@ -210,6 +215,13 @@ class T.Traversable t => Witherable t where
   rights :: t (Either a b) -> t b
   rights = mapMaybe (preview _Right)
 
+  -- | Similar to 'mapMaybe' but for 'Left' values.
+  mapLefts :: (a -> Either b c) -> t a -> t b
+  mapLefts f = mapMaybe $ \a -> case f a of Left b -> Just b; _ -> Nothing
+
+  -- | Similar to 'mapMaybe' but for 'Right' values.
+  mapRights :: (a -> Either b c) -> t a -> t c
+  mapRights f = mapMaybe $ \a -> case f a of Right b -> Just b; _ -> Nothing
 
 -- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
   {-# MINIMAL wither | mapMaybe | catMaybes #-}
@@ -342,12 +354,31 @@ hashNub :: (Witherable t, Eq a, Hashable a) => t a -> t a
 hashNub = hashNubOf wither
 {-# INLINE hashNub #-}
 
+-- | Extract all the 'Right' elements from a witherable of 'Either's,
+--   in order.
 rightsOf :: AWither s t (Either a b) b -> s -> t
 rightsOf w = mapMaybeOf w (preview _Right)
+{-# INLINE rightsOf #-}
 
+-- | Extract all the 'Right' elements from using a 'Wither' over 'Either's.
 leftsOf :: AWither s t (Either a b) a -> s -> t
 leftsOf w = mapMaybeOf w (preview _Left)
+{-# INLINE leftsOf #-}
 
+-- | Extract all the 'Left' elements from using a 'Wither' over 'Either's.
+mapLeftsOf :: AWither s t a b -> (a -> Either b c) -> s -> t
+mapLeftsOf w f = mapMaybeOf w $ \a -> case f a of Left b -> Just b; _ -> Nothing
+{-# INLINE mapLeftsOf #-}
+
+mapRightsOf :: AWither s t a c -> (a -> Either b c) -> s -> t
+mapRightsOf w f = mapMaybeOf w $ \a -> case f a of Right b -> Just b; _ -> Nothing
+{-# INLINE mapRightsOf #-}
+
+-- | Map over a witherable using a prism, filtering any values not matching the prism.
+filterOver :: Witherable w => APrism s t a b -> (a -> b) -> w s -> w t
+filterOver k f ss =
+  withPrism k $ \bt seta -> mapRights (fmap (bt . f) . seta) ss
+{-# INLINE filterOver #-}
 
 -- Instances -----------------------------------------------------------
 
