@@ -43,6 +43,7 @@ library
     semigroups,
     mtl,
     containers,
+    utf8-string,
     unordered-containers,
     aeson,
     constraints,
