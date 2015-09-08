@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FunctionalDependencies      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -11,6 +12,7 @@ import           Optical.Containers
 import           Control.Lens
 
 import qualified Data.ByteString      as BS
+import qualified Data.ByteString.Builder as LBS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString.Lazy.Char8 as LBS8
 import qualified Data.ByteString.Lazy as LBS
@@ -18,12 +20,16 @@ import qualified Data.List            as List
 import qualified Data.Text            as T
 import qualified Data.Text.Encoding            as TE
 import qualified Data.Text.Lazy       as LT
+import qualified Data.Text.Lazy.Builder as LTB
 import qualified Data.Text.Lazy.Encoding   as LTE
 
 import qualified Data.ByteString.Lazy.UTF8 as LUTF8
 import qualified Data.ByteString.UTF8 as UTF8
 
 import Prelude hiding (words, unwords, lines, unlines)
+
+import Data.Monoid (Endo (..))
+import Data.Profunctor.Unsafe
 
 -- Chunked -------------------------------------------------------------
 
@@ -196,17 +202,33 @@ instance Textual LBS.ByteString where
   utf8 = strict
   lazyUtf8 = id
 
--- utf8String :: Iso' String ByteString
--- utf8String = iso LUTF8.fromString LUTF8.toString
 
--- utf8 :: Iso' LT.Text ByteString
--- utf8 = iso LTE.encodeUtf8 LTE.decodeUtf8
+class Monoid b => Building b t | b -> t, t -> b where
+  builder :: Iso' b t
 
--- lutf8 :: Iso' LT.Text ByteString
--- lutf8 = iso LTE.encodeUtf8 LTE.decodeUtf8
+  buildChar :: Char -> b
 
--- instance Building (Endo [a]) [a] where
---   building =
+instance a ~ Char => Building (Endo [a]) [a] where
+  builder = iso (`appEndo` []) (Endo #. (++))
+  {-# INLINE builder #-}
+
+  buildChar = Endo #. (:)
+
+instance Building LTB.Builder LT.Text where
+  builder = iso LTB.toLazyText LTB.fromLazyText
+  {-# INLINE builder #-}
+
+  buildChar = LTB.singleton
+
+instance Building LBS.Builder LBS.ByteString where
+  builder = iso LBS.toLazyByteString LBS.lazyByteString
+  {-# INLINE builder #-}
+
+  buildChar = LBS.charUtf8
+
+-- | 'builder' onto the strict version.
+builder' :: (Building b l, Strict l s) => Iso' b s
+builder' = builder . strict
 
 -- class Textual t where
 --   text :: IndexedTraversal Int t Char
