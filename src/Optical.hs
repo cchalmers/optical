@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns #-}
 module Optical
   ( P.either
   , P.all
@@ -316,6 +317,27 @@ module Optical
   , RealWorld
   , runST
 
+    -- Partial functions
+  , snatch
+  , sieze
+
+    -- Loops
+  , for_i
+  , rfor_i
+
+    -- Monadic
+  , whenM
+  , unlessM
+  , whenJust
+  , whenJustM
+  , partitionM
+  , loopM
+  , whileM
+  , ifM
+  , notM
+  , (||^)
+  , (&&^)
+
   -- | Isos and contructors for common containers.
   , module Optical.Containers
   , module Optical.Text
@@ -323,7 +345,6 @@ module Optical
   , module Optical.Severable
   , module Control.Lens
   , module Foreign
-  , grab
   , Semigroup (..)
 
   ) where
@@ -387,7 +408,7 @@ x !? i = x ^? ix i
 -- | Partial index of an element. Throws an error if the element is out
 --   of range.
 (!) :: Ixed a => a -> Index a -> IxValue a
-x ! i = x ^?! ix i
+(!) x i = x ^?! ix i
 
 -- | Index the ordinal position of an element.
 (!!?) :: Foldable t => t a -> Int -> Maybe a
@@ -482,12 +503,17 @@ ijover l f = iover l $ \(V2 i j) -> f i j
 ijkover :: AnIndexedSetter (V3 i) s t a b -> (i -> i -> i -> a -> b) -> s -> t
 ijkover l f = iover l $ \(V3 i j k) -> f i j k
 
--- | Grab the first result from a getter. If no result exist this will
---   throw an error.
-grab :: MonadReader s m => Getting (First a) s a -> m a
-grab l = fromMaybe (error "grab: empty getter") `liftM` preview l
+-- Partial functions ---------------------------------------------------
 
--- Extas ---------------------------------------------------------------
+-- | A verson of 'view' that throws an error if no value is present.
+sieze :: MonadReader s m => Getting (First a) s a -> m a
+sieze l = fromMaybe (error "grab: empty getter") `liftM` preview l
+
+-- | A version of 'toMaybe' that throws an error if no value is present.
+snatch :: Foldable f => f a -> a
+snatch = fromMaybe (error "gawk: empty getter") . preview folded
+
+-- Monadic extras ------------------------------------------------------
 
 -- | Only perform the action if the predicate returns 'True'.
 whenM :: Monad m => m Bool -> m () -> m ()
@@ -521,11 +547,11 @@ whenJustM mg f = maybe (return ()) f =<< mg
 -- > partitionM (Just . even) [1,2,3] == Just ([2], [1,3])
 -- > partitionM (const Nothing) [1,2,3] == Nothing
 partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
-partitionM f [] = return ([], [])
+partitionM _ [] = return ([], [])
 partitionM f (x:xs) = do
-    res <- f x
-    (as,bs) <- partitionM f xs
-    return ([x | res]++as, [x | not res]++bs)
+  res <- f x
+  (as,bs) <- partitionM f xs
+  return ([x | res]++as, [x | not res]++bs)
 
 
 -- -- | A version of 'concatMap' that works with a monadic predicate.
@@ -542,10 +568,10 @@ partitionM f (x:xs) = do
 --   or 'Right' to abort the loop.
 loopM :: Monad m => (a -> m (Either a b)) -> a -> m b
 loopM act x = do
-    res <- act x
-    case res of
-        Left x -> loopM act x
-        Right v -> return v
+  res <- act x
+  case res of
+    Left x  -> loopM act x
+    Right v -> return v
 
 -- | Keep running an operation until it becomes 'False'. As an example:
 --
@@ -557,8 +583,8 @@ loopM act x = do
 --   If you need some state persisted between each test, use 'loopM'.
 whileM :: Monad m => m Bool -> m ()
 whileM act = do
-    b <- act
-    when b $ whileM act
+  b <- act
+  when b $ whileM act
 
 -- Booleans
 
@@ -589,6 +615,25 @@ notM = fmap not
 -- > Just True  &&^ Just False == Just False
 (&&^) :: Monad m => m Bool -> m Bool -> m Bool
 (&&^) a b = ifM a b (return False)
+
+-- Loops
+
+-- | Simple for loop.  Counts from /start/ to /end/-1.
+for_i :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+for_i n0 !n f = loop n0
+  where
+    loop i | i == n    = return ()
+           | otherwise = f i >> loop (i+1)
+{-# INLINE for_i #-}
+
+-- | Simple reverse-for loop.  Counts from /start/-1 to /end/ (which
+-- must be less than /start/).
+rfor_i :: Monad m => Int -> Int -> (Int -> m ()) -> m ()
+rfor_i n0 !n f = loop n0
+  where
+    loop i | i == n    = return ()
+           | otherwise = let i' = i-1 in f i' >> loop i'
+{-# INLINE rfor_i #-}
 
 -- module Data.List
 --    (

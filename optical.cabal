@@ -17,6 +17,7 @@ library
     -- Lensy
     Optical
     Optical.Bit
+    Optical.Constraints
     Optical.Witherable
     Optical.Severable
     Optical.Patterns
@@ -35,7 +36,7 @@ library
     UndecidableInstances
     FlexibleContexts
   build-depends:
-    base                 >= 4.7  && <4.9,
+    base                 >= 4.7  && <5.0,
     bifunctors,
     lens,
     vector,
@@ -43,6 +44,8 @@ library
     mtl,
     containers,
     unordered-containers,
+    aeson,
+    constraints,
     primitive,
     profunctors,
     comonad,

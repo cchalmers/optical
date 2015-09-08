@@ -176,11 +176,11 @@ class T.Traversable t => Witherable t where
   delete :: Eq a => a -> t a -> t a
   delete a = filter (/= a)
 
-  -- | Delete all occurences of a foldable container of items from a
-  --   witherable.
-  (\\) :: (F.Foldable f, Eq a) => t a -> f a -> t a
-  xs \\ t = filter (`F.notElem` v) xs
-    where v = V.fromList (F.toList t)
+  -- -- | Delete all occurences of a foldable container of items from a
+  -- --   witherable.
+  -- (\\) :: (F.Foldable f, Eq a) => t a -> f a -> t a
+  -- xs \\ t = filter (`F.notElem` v) xs
+  --   where v = V.fromList (F.toList t)
 
   -- | Delete all occurences not in the foldable container of items.
   intersect :: (F.Foldable f, Eq a) => t a -> f a -> t a
