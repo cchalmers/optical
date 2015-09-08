@@ -15,10 +15,13 @@ import qualified Data.List            as List
 import qualified Data.Text            as T
 import qualified Data.Text.Lazy       as LT
 
+import Prelude hiding (words, unwords, lines, unlines)
+
 -- Chunked -------------------------------------------------------------
 
 -- | Lazy constructs that are made of strict chunks.
 class Strict l s => Chunked l s where
+  -- | Isomorphism between a lazy verion and a list of strict versions.
   chunked :: Iso' l [s]
 
 instance Chunked LT.Text T.Text where
@@ -30,35 +33,74 @@ instance Chunked LBS.ByteString BS.ByteString where
 -- Text ----------------------------------------------------------------
 
 class Textual t where
+  -- | Indexed traversal over individual characters of something 'Textual'
   chars :: IndexedTraversal' Int t Char
 
+  -- | Break a string up into a list of strings at newline characters.
+  --   The resulting strings do not contain newlines.
+  lines :: t -> [t]
+
+  -- | Interspece strings with a newline char.
+  unlines :: [t] -> t
+
+  -- | Indexed traversal over the lines of a something 'Textual'. To be
+  --   a valid traversal, each traversed line cannot add any extra
+  --   newlines.
   lined :: IndexedTraversal' Int t t
+  lined f = fmap unlines . traversed f . lines
+  {-# INLINE lined #-}
 
+  -- | Break a string up into a list of words, which were delimited by
+  --   white space.
+  words :: t -> [t]
+
+  -- | Interspece strings with a space char.
+  unwords :: [t] -> t
+
+  -- | Indexed traversal over the words of a something 'Textual'. To be
+  --   a valid traversal, each traversed word cannot add an extra spaces
+  --   and the original text has isolated spaces.
   worded :: IndexedTraversal' Int t t
-
-  -- | Invalid encodeing is converted to empty chars (this should really
-  --   be a prism but common librarys don't provide a way to easily do
-  --   this)
-  -- uft8Decoded :: Iso' t ByteString
-
-  -- uft8Encoded :: Iso' ByteString t
-
-  -- uft8Builder :: Iso' t Builder
+  worded f = fmap unwords . traversed f . words
+  {-# INLINE worded #-}
 
 instance Textual T.Text where
+  {-# INLINE chars #-}
+  {-# INLINE words #-}
+  {-# INLINE unwords #-}
+  {-# INLINE lines #-}
+  {-# INLINE unlines #-}
   chars = _Text . chars
-  lined f = fmap T.unlines . traversed f . T.lines
-  worded f = fmap T.unwords . traversed f . T.words
+  words = T.words
+  lines = T.lines
+  unwords = T.unwords
+  unlines = T.unlines
 
 instance Textual LT.Text where
+  {-# INLINE chars #-}
+  {-# INLINE words #-}
+  {-# INLINE unwords #-}
+  {-# INLINE lines #-}
+  {-# INLINE unlines #-}
   chars = _LText . chars
-  lined f = fmap LT.unlines . traversed f . LT.lines
-  worded f = fmap LT.unwords . traversed f . LT.words
+  words = LT.words
+  lines = LT.lines
+  unwords = LT.unwords
+  unlines = LT.unlines
 
 instance Textual String where
+  {-# INLINE chars #-}
+  {-# INLINE words #-}
+  {-# INLINE unwords #-}
+  {-# INLINE lines #-}
+  {-# INLINE unlines #-}
   chars = traversed
-  lined f = fmap List.unlines . traversed f . List.lines
-  worded f = fmap List.unwords . traversed f . List.words
+  words = List.words
+  lines = List.lines
+  unwords = List.unwords
+  unlines = List.unlines
+
+-- utf8String :: Iso' ByteString String
 
 -- utf8 :: Iso' Text ByteString
 -- utf8 = iso encodeUtf8 decodeUtf8

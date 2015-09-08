@@ -14,10 +14,10 @@ module Optical
   , P.sequence_
   , (P.<$>)
   , P.maybe
-  , P.lines
-  , P.unlines
-  , P.unwords
-  , P.words
+  -- , P.lines
+  -- , P.unlines
+  -- , P.unwords
+  -- , P.words
   , P.curry
   , P.fst
   , P.snd
