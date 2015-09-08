@@ -175,6 +175,7 @@ class T.Traversable t => Witherable t where
   -- | Delete all occurences of an item.
   delete :: Eq a => a -> t a -> t a
   delete a = filter (/= a)
+  {-# INLINE delete #-}
 
   -- -- | Delete all occurences of a foldable container of items from a
   -- --   witherable.
@@ -186,6 +187,7 @@ class T.Traversable t => Witherable t where
   intersect :: (F.Foldable f, Eq a) => t a -> f a -> t a
   intersect a b = filter (`V.elem` s) a
     where s = V.fromList (F.toList b)
+  {-# INLINE intersect #-}
 
   -- | Extract all the 'Left' elements from a witherable of 'Either's,
   --   in order.
@@ -200,6 +202,7 @@ class T.Traversable t => Witherable t where
   --
   lefts :: t (Either a b) -> t a
   lefts = mapMaybe (preview _Left)
+  {-# INLINE lefts #-}
 
   -- | Extract all the 'Right' elements from a witherable of 'Either's,
   --   in order.
@@ -214,14 +217,17 @@ class T.Traversable t => Witherable t where
   --
   rights :: t (Either a b) -> t b
   rights = mapMaybe (preview _Right)
+  {-# INLINE rights #-}
 
   -- | Similar to 'mapMaybe' but for 'Left' values.
   mapLefts :: (a -> Either b c) -> t a -> t b
   mapLefts f = mapMaybe $ \a -> case f a of Left b -> Just b; _ -> Nothing
+  {-# INLINE mapLefts #-}
 
   -- | Similar to 'mapMaybe' but for 'Right' values.
   mapRights :: (a -> Either b c) -> t a -> t c
   mapRights f = mapMaybe $ \a -> case f a of Right b -> Just b; _ -> Nothing
+  {-# INLINE mapRights #-}
 
 -- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 707
   {-# MINIMAL wither | mapMaybe | catMaybes #-}
