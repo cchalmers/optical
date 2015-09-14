@@ -29,6 +29,7 @@ module Optical.Witherable
     -- * Witherable
     Witherable (..)
 
+  , blight
   , witherM
   , blightM
   , ordNub
@@ -142,7 +143,7 @@ class T.Traversable t => Witherable t where
 
   -- | Traverse with ability to remove elements by returning 'Nothing'.
   --   This is an applicative version of `mapMaybe`.
-  wither :: Wither (t a) (t b) a b -- Applicative f => (a -> f (Maybe b)) -> t a -> f (t b)
+  wither :: Applicative f => (a -> f (Maybe b)) -> t a -> f (t b)
   wither f = fmap catMaybes . T.traverse f
   {-# INLINE wither #-}
 
@@ -319,6 +320,11 @@ filterOf w f = runIdentity #. filterAOf w (Identity #. f)
 witherM :: (Witherable t, Monad m) => (a -> MaybeT m b) -> t a -> m (t b)
 witherM f = unwrapMonad . wither (WrapMonad . runMaybeT . f)
 {-# INLINE witherM #-}
+
+-- | 'wither' flipped.
+blight :: (Witherable t, Applicative f) => t a -> (a -> f (Maybe b)) -> f (t b)
+blight = flip wither
+{-# INLINE blight #-}
 
 -- | 'blightM' is 'witherM' with its arguments flipped.
 blightM :: (Monad m, Witherable t) => t a -> (a -> MaybeT m b) -> m (t b)
