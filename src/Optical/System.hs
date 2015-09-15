@@ -8,6 +8,7 @@ module Optical.System
 
   , mkdir
   , ls
+  , isDir
   ) where
 
 import System.FilePath
@@ -26,4 +27,8 @@ ls dir = do
   dir' <- liftIO $ canonicalizePath dir
   ps <- liftIO $ drop 2 <$> getDirectoryContents dir'
   return $ map (dir' </>) ps
+
+-- | Check if 'FilePath' points to a directory.
+isDir :: MonadIO m => FilePath -> m Bool
+isDir = liftIO . doesDirectoryExist
 
