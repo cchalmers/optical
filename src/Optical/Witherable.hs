@@ -32,6 +32,8 @@ module Optical.Witherable
   , blight
   , witherM
   , blightM
+  , witherM_
+  , blightM_
   , ordNub
   , hashNub
 
@@ -330,6 +332,16 @@ blight = flip wither
 blightM :: (Monad m, Witherable t) => t a -> (a -> MaybeT m b) -> m (t b)
 blightM = flip witherM
 {-# INLINE blightM #-}
+
+-- | Same as 'witherM_' but ignores the result.
+witherM_ :: (Monad m, Foldable t) => (a -> MaybeT m b) -> t a -> m ()
+witherM_ f = mapM_ (runMaybeT . f)
+{-# INLINE witherM_ #-}
+
+-- | Same as 'blightM_' but ignores the result.
+blightM_ :: (Monad m, Foldable t) => t a -> (a -> MaybeT m b) -> m ()
+blightM_ = flip witherM_
+{-# INLINE blightM_ #-}
 
 -- | Remove the duplicate elements using a 'Wither'.
 ordNubOf :: Ord a => WitherLike' (State (Set.Set a)) s a -> s -> s
