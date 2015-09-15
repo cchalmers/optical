@@ -286,6 +286,7 @@ module Optical
 
   , ijover
   , ijkover
+  , previewA
 
   -- * Monads
 
@@ -367,6 +368,7 @@ import Control.Monad.Primitive
 import Data.Distributive
 import Data.Foldable as F
 import Data.Traversable
+import qualified Control.Applicative as A
 
 import qualified Data.List as List
 
@@ -634,6 +636,10 @@ rfor_i n0 !n f = loop n0
     loop i | i == n    = return ()
            | otherwise = let i' = i-1 in f i' >> loop i'
 {-# INLINE rfor_i #-}
+
+-- | 'previewA' where a no element leads to 'Control.Applicative.empty'.
+previewA :: (A.Alternative f, MonadReader s m) => Getting (First a) s a -> m (f a)
+previewA l = maybe A.empty pure <$> preview l
 
 -- module Data.List
 --    (
