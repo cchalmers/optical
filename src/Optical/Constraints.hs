@@ -9,7 +9,7 @@
 module Optical.Constraints where
 
 -- import Linear
-import Data.Aeson
+-- import Data.Aeson
 import Data.Functor.Classes
 import Data.Constraint
 import Data.Constraint.Unsafe

@@ -133,7 +133,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Hashable
 import Data.Monoid
 import Data.Word
-import Data.Foldable (Foldable, toList)
+import Data.Foldable (toList)
 import           Data.ByteString.Internal (ByteString (PS))
 import           Data.Vector.Storable     (unsafeFromForeignPtr,
                                            unsafeToForeignPtr)

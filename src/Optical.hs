@@ -123,7 +123,7 @@ module Optical
   , P.mapM
   , P.sequence
   , P.sequenceA
-  , P.traverse
+  -- , P.traverse
   , for
   , for_
   , (P.*>)
@@ -362,7 +362,7 @@ import Data.Semigroup hiding (First)
 import Data.Maybe
 import Data.Bool
 import Control.Monad.ST
-import Foreign.Storable (Storable (..))
+-- import Foreign.Storable (Storable (..))
 import Control.Monad.Primitive
 import Data.Distributive
 import Data.Foldable as F
@@ -570,7 +570,7 @@ loopM :: Monad m => (a -> m (Either a b)) -> a -> m b
 loopM act x = do
   res <- act x
   case res of
-    Left x  -> loopM act x
+    Left x' -> loopM act x'
     Right v -> return v
 
 -- | Keep running an operation until it becomes 'False'. As an example:

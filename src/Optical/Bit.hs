@@ -9,6 +9,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# OPTIONS -fno-warn-orphans           #-}
 module Optical.Bit
   (
   -- * Bits
@@ -107,6 +108,7 @@ instance GM.MVector U.MVector Bit where
   basicUnsafeCopy (MV_Bit _ u1) (MV_Bit _ u2) = GM.basicUnsafeCopy u1 u2
   basicUnsafeMove (MV_Bit _ u1) (MV_Bit _ u2) = GM.basicUnsafeMove u1 u2
   basicUnsafeGrow (MV_Bit _ u) n = liftM (MV_Bit n) (GM.basicUnsafeGrow u (wds n))
+  basicInitialize (MV_Bit _ u) = GM.basicInitialize u
 
 data instance U.Vector Bit = V_Bit {-# UNPACK #-} !Int {-# UNPACK #-} !(U.Vector Word64)
 instance G.Vector U.Vector Bit where
@@ -236,6 +238,7 @@ instance U.Unbox a => GM.MVector U.MVector (Maybe a) where
     b' <- GM.basicUnsafeGrow b n
     v' <- GM.basicUnsafeGrow v n
     return $! MV_Maybe b' v'
+  basicInitialize (MV_Maybe b v) = GM.basicInitialize b >> GM.basicInitialize v
 
 data instance U.Vector (Maybe a) = V_Maybe !(U.Vector Bit) !(U.Vector a)
 instance U.Unbox a => G.Vector U.Vector (Maybe a) where
