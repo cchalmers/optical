@@ -78,6 +78,9 @@ get :: Functor f => Getting b s b -> f s -> f b
 get l = fmap (view l)
 {-# INLINE get #-}
 
+instance Zipping ((->) a)
+instance Zipping (ReifiedGetter s)
+
 instance Zipping [] where
   zipWith  = List.zipWith
   zipWith3 = List.zipWith3
