@@ -373,7 +373,7 @@ import Control.Monad.Primitive
 import Data.Distributive
 import Data.Foldable as F
 import Data.Traversable
-import qualified Control.Applicative as A
+import Control.Applicative
 
 import qualified Data.List as List
 
@@ -449,10 +449,6 @@ init = preview _init
 -- | Check if the item is empty.
 isEmpty :: AsEmpty a => a -> Bool
 isEmpty = has _Empty
-
--- | The empty item.
-empty :: AsEmpty a => a
-empty = _Empty # ()
 
 -- | Map over every element, using the 'each' class.
 map :: Each s t a b => (a -> b) -> s -> t
@@ -643,8 +639,8 @@ rfor_i n0 !n f = loop n0
 {-# INLINE rfor_i #-}
 
 -- | 'previewA' where a no element leads to 'Control.Applicative.empty'.
-previewA :: (A.Alternative f, MonadReader s m) => Getting (First a) s a -> m (f a)
-previewA l = maybe A.empty pure <$> preview l
+previewA :: (Alternative f, MonadReader s m) => Getting (First a) s a -> m (f a)
+previewA l = maybe empty pure <$> preview l
 
 -- XXX not allowed to repeat indexes
 
