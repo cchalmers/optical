@@ -1,4 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE BangPatterns #-}
 module Optical
@@ -287,6 +288,10 @@ module Optical
   , ijover
   , ijkover
   , previewA
+  , atOrdinals
+  , atUpdate
+  , ixOrdinals
+  , ixUpdate
 
   -- * Monads
 
@@ -640,6 +645,20 @@ rfor_i n0 !n f = loop n0
 -- | 'previewA' where a no element leads to 'Control.Applicative.empty'.
 previewA :: (A.Alternative f, MonadReader s m) => Getting (First a) s a -> m (f a)
 previewA l = maybe A.empty pure <$> preview l
+
+-- XXX not allowed to repeat indexes
+
+atOrdinals :: (Foldable f, At s) => f (Index s) -> IndexedTraversal' (Index s) s (Maybe (IxValue s))
+atOrdinals is f a = atUpdate a <$> (traverse . itraversed) f (a ^@.. foldMap iat is)
+
+atUpdate :: (Foldable f, At s) => s -> f (Index s, Maybe (IxValue s)) -> s
+atUpdate = foldr (\(i, a) -> set (at i) a)
+
+ixOrdinals :: (Foldable f, Ixed s) => f (Index s) -> IndexedTraversal' (Index s) s (IxValue s)
+ixOrdinals is f a = ixUpdate a <$> (traverse . itraversed) f (a ^@.. foldMap iix is)
+
+ixUpdate :: (Foldable f, Ixed s) => s -> f (Index s, IxValue s) -> s
+ixUpdate = foldr (\(i, a) -> set (ix i) a)
 
 -- module Data.List
 --    (
