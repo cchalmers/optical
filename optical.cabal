@@ -22,6 +22,7 @@ library
     Optical.Severable
     Optical.Patterns
     Optical.Containers
+    Optical.Coerce
     Optical.System
     Optical.Text
   -- other-modules:       
@@ -43,6 +44,7 @@ library
     semigroups,
     mtl,
     containers,
+    tagged,
     utf8-string,
     unordered-containers,
     aeson,

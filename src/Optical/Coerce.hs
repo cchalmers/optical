@@ -1,4 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE RoleAnnotations #-}
@@ -7,8 +9,16 @@ module Optical.Coerce
   , coerce1
   , liftC
 
+  , Coercible2 (..)
+  , coerce2
+  , lift2C
+
+  , CoercedIso
+  , CoercedIso'
+  , coerced
   ) where
 
+import Control.Lens hiding (coerce, coerced)
 import Data.Type.Coercion
 import Data.Coerce
 import Data.Proxy
@@ -20,6 +30,7 @@ import Data.Monoid
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Data.Tagged
 import Control.Monad.RWS
 import Data.Functor.Identity
 import Control.Applicative
@@ -113,4 +124,25 @@ contratrans Coercion = Coercion
 
 instance (Coercible1 m, Join m) => Join (IdentityT m) where
   mjoin = joinWith (Proxy :: Proxy m)
+
+class Coercible2 p where
+  coercion2 :: (Coercible a b, Coercible s t) => Coercion (p a s) (p b t)
+
+instance Coercible2 (->)        where coercion2 = Coercion
+instance Coercible2 (Indexed i) where coercion2 = Coercion
+instance Coercible2 Tagged      where coercion2 = Coercion
+
+lift2C :: Coercible2 p => Coercion a b -> Coercion s t -> Coercion (p a s) (p b t)
+lift2C Coercion Coercion = coercion2
+
+coerce2 :: (Coercible2 p, Coercible a b, Coercible s t) => p a s -> p b t
+coerce2 = coerceWith coercion2
+
+type CoercedIso s t a b = forall (p :: * -> * -> *) (f :: * -> *). (Coercible2 p, Coercible1 f) => p a (f b) -> p s (f t)
+
+type CoercedIso' s a = CoercedIso s s a a
+
+-- | An 'Iso' between two coercibles.
+coerced :: (Coercible a s, Coercible b t) => CoercedIso s t a b
+coerced = coerceWith (lift2C Coercion coercion1)
 
