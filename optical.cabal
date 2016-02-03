@@ -18,6 +18,7 @@ library
     Optical
     Optical.Bit
     Optical.Constraints
+    Optical.Each
     Optical.Witherable
     Optical.Severable
     Optical.Patterns
