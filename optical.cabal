@@ -49,6 +49,7 @@ library
     utf8-string,
     unordered-containers,
     aeson,
+    reflection,
     constraints,
     primitive,
     profunctors,
