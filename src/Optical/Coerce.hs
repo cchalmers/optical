@@ -18,7 +18,7 @@ module Optical.Coerce
   , coerced
   ) where
 
-import Control.Lens hiding (coerce, coerced)
+import Control.Lens hiding (coerced)
 import Data.Type.Coercion
 import Data.Coerce
 import Data.Proxy
@@ -32,8 +32,6 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 import Data.Tagged
 import Control.Monad.RWS
-import Data.Functor.Identity
-import Control.Applicative
 import Data.Ord
 import Control.Monad.ST (ST)
 import Control.Monad.Trans.Identity

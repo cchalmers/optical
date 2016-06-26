@@ -275,7 +275,7 @@ type Across' p f s a = Across p f s s a a
 -- Functions on withers ------------------------------------------------
 
 -- | 'witherOf' is actually 'id', but left for consistency.
-witherOf :: Applicative f => WitherLike f s t a b -> (a -> f (Maybe b)) -> s -> f t
+witherOf :: WitherLike f s t a b -> (a -> f (Maybe b)) -> s -> f t
 witherOf = id
 {-# INLINE witherOf #-}
 
@@ -434,7 +434,7 @@ instance Witherable IM.IntMap where
   filter = IM.filter
   {-# INLINE filter #-}
 
-instance Ord k => Witherable (M.Map k) where
+instance Witherable (M.Map k) where
   mapMaybe = M.mapMaybe
   {-# INLINE mapMaybe #-}
   filter = M.filter
@@ -588,7 +588,7 @@ instance WitherableWithIndex Int [] where
 
 instance WitherableWithIndex Int S.Seq where
   iwither f = fmap S.fromList . iwither f . F.toList
-  {-# INLINE imapMaybe #-}
+  {-# INLINE iwither #-}
 
 instance WitherableWithIndex Int V.Vector where
   iwither f = fmap V.fromList . iwither f . F.toList
@@ -601,7 +601,7 @@ instance WitherableWithIndex Int IM.IntMap where
   ifilter = IM.filterWithKey
   {-# INLINE ifilter #-}
 
-instance Ord k => WitherableWithIndex k (M.Map k) where
+instance WitherableWithIndex k (M.Map k) where
   imapMaybe = M.mapMaybeWithKey
   {-# INLINE imapMaybe #-}
   ifilter = M.filterWithKey
@@ -616,7 +616,7 @@ instance WitherableWithIndex () Maybe
 -- Generalised indexed withers -----------------------------------------
 
 -- | Filter with access to the index.
-iwitherOf :: Functor f => IndexedWitherLike i f s t a b -> (i -> a -> f (Maybe b)) -> s -> f t
+iwitherOf :: IndexedWitherLike i f s t a b -> (i -> a -> f (Maybe b)) -> s -> f t
 iwitherOf w = w .# Indexed
 {-# INLINE iwitherOf #-}
 

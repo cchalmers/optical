@@ -57,7 +57,9 @@ instance Show Bit where
   show On = "On"
   show _  = "Off"
 
+pattern On :: Bit
 pattern On  = Bit True
+pattern Off :: Bit
 pattern Off = Bit False
 
 instance Rewrapped Bit Bit

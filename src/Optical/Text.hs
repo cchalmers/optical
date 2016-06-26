@@ -95,7 +95,6 @@ class Textual t where
   string :: Iso' t String
 
 instance Textual T.Text where
-  {-# INLINE chars #-}
   {-# INLINE words #-}
   {-# INLINE unwords #-}
   {-# INLINE lines #-}
@@ -116,7 +115,6 @@ instance Textual T.Text where
   lazyUtf8 = text . lazyUtf8
 
 instance Textual LT.Text where
-  {-# INLINE chars #-}
   {-# INLINE words #-}
   {-# INLINE unwords #-}
   {-# INLINE lines #-}
@@ -160,7 +158,6 @@ instance a ~ Char => Textual [a] where
 
 -- | utf8 encoded.
 instance Textual BS.ByteString where
-  {-# INLINE chars #-}
   {-# INLINE words #-}
   {-# INLINE unwords #-}
   {-# INLINE lines #-}
@@ -182,7 +179,6 @@ instance Textual BS.ByteString where
 
 -- | utf8 encoded.
 instance Textual LBS.ByteString where
-  {-# INLINE chars #-}
   {-# INLINE words #-}
   {-# INLINE unwords #-}
   {-# INLINE lines #-}
