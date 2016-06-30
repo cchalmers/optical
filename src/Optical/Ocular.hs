@@ -50,6 +50,9 @@ import           Data.Vector.Generic.Lens
 class Ocular p q f t where
   optic :: Optical p q f (t a) (t b) a b
 
+-- Type used for indexed optics
+type family I (t :: * -> *)
+
 -- Mapping -------------------------------------------------------------
 
 type Mappable = Ocular (->) (->) Identity
@@ -77,14 +80,13 @@ single = l where
   l :: forall t a b. HasSingle t => Lens (t a) (t b) a b
   l = cloneLens optic \\ (unsafeCoerceConstraint :: HasSingle t :- Ocular (->) (->) (Pretext (->) a b) t)
 
-type HasSingleWithIndex i = Ocular (Indexed i) (->) (Pretext (Indexed i) A B)
+type HasSingleWithIndex i t = (Ocular (Indexed i) (->) (Pretext (Indexed i) A B) t, I t ~ i)
 
 anISingle :: forall i t a b. HasSingleWithIndex i t => AnIndexedLens i (t a) (t b) a b
 anISingle = optic \\ (unsafeCoerceConstraint :: HasSingleWithIndex i t :- Ocular (Indexed i) (->) (Pretext (Indexed i) a b) t)
 
--- even with undefined, this doesn't compile :(
--- isingle :: HasLensWithIndex i t => IndexedLens i (t a) (t b) a b
--- isingle = cloneIndexedLens anISingle
+isingle :: HasSingleWithIndex i t => IndexedLens i (t a) (t b) a b
+isingle = cloneIndexedLens anISingle
 
 -- Isomorphisms --------------------------------------------------------
 
