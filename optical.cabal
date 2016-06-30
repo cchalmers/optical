@@ -20,6 +20,7 @@ library
     Optical.Constraints
     Optical.Each
     Optical.Witherable
+    Optical.Ocular
     Optical.Severable
     Optical.Patterns
     Optical.Containers
@@ -48,6 +49,8 @@ library
     tagged,
     utf8-string,
     unordered-containers,
+    data-default,
+    contravariant,
     aeson,
     reflection,
     constraints,
