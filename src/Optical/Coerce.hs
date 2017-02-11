@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
@@ -29,6 +30,7 @@ import Data.Coerce
 import Data.Proxy
 import Data.Vector (Vector)
 import Data.Sequence (Seq)
+import Control.Applicative
 import Data.IntMap (IntMap)
 import Data.Map (Map)
 import Data.Monoid
@@ -52,12 +54,13 @@ import Data.Functor.Classes
 import Linear (V0, V1, V2, V3, V4)
 import Unsafe.Coerce
 import Data.Vector.Unboxed (Unbox)
+import Data.Functor.Compose
 
 -- | Objects with the ability to coerce given the argument is
 --   'Coercible'. This is usually defined as @'coercion1' = 'Coersion'@
 --   as long as the constructor is in scope or the type role is not
 --   nominal.
-class Coercible1 f where
+class Coercible1 (f :: k1 -> k2) where
   coercion1 :: Coercible a b => Coercion (f a) (f b)
 
 -- | Coerce over a 'Coercible1'.
@@ -66,6 +69,9 @@ coerce1 = coerceWith coercion1
 
 coercionOf :: Coercible a b => (a -> b) -> Coercion a b
 coercionOf _ = Coercion
+
+coercion1Of :: Coercible a b => (a c -> b c) -> Coercion a b
+coercion1Of _ = Coercion
 
 -- | Lift a 'Coercion' into the 'Coercible1'.
 liftC :: Coercible1 f => Coercion a b -> Coercion (f a) (f b)
@@ -116,12 +122,41 @@ instance Coercible1 f => Coercible1 (Alt f) where
 instance Coercible1 f => Coercible1 (IdentityT f) where
   coercion1 = coercionOf IdentityT . coercion1 . coercionOf runIdentityT
 
--- | Like 'ala' but using coercions.
--- alac :: (Coercible1 f, Coercible a s) => (a -> s) -> ((a -> s) -> f s) -> f a
--- alac k f = coerce1 (f k)
+instance Coercible1 f => Coercible1 (Compose f) where
+  coercion1 = reduce $ coercionOf Compose . coercion1 . coercionOf getCompose
 
--- Poor half-solution for allowing generalised newtype deriving with
--- join in Monad
+instance Coercible1 Compose where
+  coercion1 = Coercion
+
+instance Coercible1 Coercion     where coercion1 = Coercion
+instance Coercible1 (Coercion a) where coercion1 = Coercion
+
+
+instance Coercible1 WrappedArrow where
+  coercion1 = Coercion
+
+instance Coercible1 p => Coercible1 (WrappedArrow p) where
+  coercion1 = coercion1Of WrapArrow . coercion1 . coercion1Of unwrapArrow
+
+instance Coercible1 (p a) => Coercible1 (WrappedArrow p a) where
+  coercion1 = coercionOf WrapArrow . coercion1 . coercionOf unwrapArrow
+
+eta :: forall (f :: x -> y) (g :: x -> y) (a :: x). Coercion f g -> Coercion (f a) (g a)
+eta Coercion = Coercion
+
+-- I think this is correct. It's the only place I use unsafeCoerce, it's
+-- needed for Coercible1 (Compose f).
+reduce :: forall (f :: x -> y) (g :: x -> y) (a :: x). (forall a. Coercion (f a) (g a)) -> Coercion f g
+reduce = unsafeCoerce
+
+instance (Coercible1 f, Coercible1 g) => Coercible1 (Compose f g) where
+  coercion1 = coercionOf Compose . liftC coercion1 . coercionOf getCompose
+
+-- | Like 'ala' but using coercions.
+alac :: (Coercible1 f, Coercible a s) => (a -> s) -> ((a -> s) -> f s) -> f a
+alac k f = coerce1 (f k)
+
+-- My attempt allowing generalised newtype deriving with join in Monad
 
 class Monad m => Join m where
   mjoin :: m (m a) -> m a
@@ -142,12 +177,17 @@ contratrans Coercion = Coercion
 instance (Coercible1 m, Join m) => Join (IdentityT m) where
   mjoin = joinWith (Proxy :: Proxy m)
 
-class Coercible2 p where
+class Coercible2 (p :: k1 -> k2 -> k3) where
   coercion2 :: (Coercible a b, Coercible s t) => Coercion (p a s) (p b t)
 
 instance Coercible2 (->)        where coercion2 = Coercion
 instance Coercible2 (Indexed i) where coercion2 = Coercion
 instance Coercible2 Tagged      where coercion2 = Coercion
+
+instance Coercible2 Compose where
+  coercion2 = unsafeCoerce (Coercion :: Coercion Identity Identity)
+instance Coercible1 f => Coercible2 (Compose f) where
+  coercion2 = unsafeCoerce (Coercion :: Coercion Identity Identity)
 
 lift2C :: Coercible2 p => Coercion a b -> Coercion s t -> Coercion (p a s) (p b t)
 lift2C Coercion Coercion = coercion2
